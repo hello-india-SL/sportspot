@@ -965,7 +965,10 @@ async function doRegister(e){
     const r=await API.register({name,email,phone,password:p1});
     if(r.user)await login(r.user,`🎉 Account created! Welcome, ${esc(name.split(' ')[0])}.`);
     else showOtp(email);
-  }catch(x){err(x.message||'Could not create account.')}
+  }catch(x){
+    const m=x.message||'';
+    err(/rate limit/i.test(m)?'Too many sign-ups right now — please try again in a few minutes.':m||'Could not create account.');
+  }
   finally{busy($('#rBtn'),false)}
   return false;
 }
