@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportSpot - Find Your Game</title>
+<!-- Libraries: PDF receipts + Supabase database -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =====================================================================
+   ⚙️  YOUR SETTINGS — paste your keys here (see setup steps)
+   Leave as-is to run in DEMO mode (data saved in the browser only).
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL:        'https://tzhuytnyoymkekmpanpt.supabase.co',
+  SUPABASE_ANON_KEY:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6aHV5dG55b3lta2VrbXBhbnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDg4NzAsImV4cCI6MjEwNTU4NDg3MH0.AThEnGrrIALBV8x6T-KZm9tk6zG-16f1L9KstLa9dmE',
+  EMAILJS_PUBLIC_KEY:  'CI1fWYOJLStjarQEk',
+  EMAILJS_SERVICE_ID:  'service_ji36cig',
+  EMAILJS_TEMPLATE_ID: 'template_ljewh4i'
+};
+</script>
+<style>
+:root{--navy:#071a33;--navy2:#041225;--green:#35d07f;--green-d:#14864c;--bg:#f5f7fb;--text:#172033;--muted:#697386;--line:#e3e8ef;--red:#e5484d;--amber:#f5a623}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font-family:inherit;font-size:14px}
+[hidden]{display:none!important}
+.muted{color:var(--muted)}
+
+/* NAVBAR */
+.navbar{background:var(--navy);color:#fff;padding:16px 7%;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:1000}
+.logo{font-size:27px;font-weight:800;cursor:pointer;color:#fff}
+.logo span{color:var(--green)}
+.nav-links{display:flex;gap:26px;list-style:none;margin-left:auto}
+.nav-links a{color:#fff;text-decoration:none;font-size:15px;cursor:pointer}
+.nav-links a:hover{color:var(--green)}
+.nav-right{display:flex;gap:10px;align-items:center;min-height:40px}
+.nav-btn{background:var(--green);color:var(--navy);border:none;padding:11px 20px;border-radius:8px;font-weight:700;cursor:pointer}
+.nav-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);padding:10px 16px;border-radius:8px;cursor:pointer}
+.nav-ghost:hover{border-color:var(--green);color:var(--green)}
+.nav-user{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);color:#fff;border:none;padding:6px 14px 6px 6px;border-radius:30px;cursor:pointer}
+.av{width:32px;height:32px;border-radius:50%;background:var(--green);color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:13px}
+.burger{display:none;background:none;border:none;color:#fff;font-size:26px;cursor:pointer}
+
+/* HERO */
+.hero{min-height:540px;padding:90px 7%;display:flex;align-items:center;color:#fff;
+ background:linear-gradient(90deg,rgba(3,18,38,.96),rgba(3,18,38,.65)),url("https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1800&q=80") center/cover,#0b2344}
+.hero-content{max-width:900px}
+.hero h1{font-size:clamp(42px,6vw,72px);line-height:1.05;margin-bottom:22px}
+.hero h1 span{color:var(--green)}
+.hero p{font-size:19px;line-height:1.6;color:#d8e1ec;margin-bottom:32px;max-width:640px}
+.search-box{background:#fff;padding:12px;border-radius:14px;display:flex;gap:10px;color:var(--text);box-shadow:0 15px 35px rgba(0,0,0,.25)}
+.search-box input,.search-box select{flex:1;min-width:120px;padding:14px;border:1px solid #dce2ea;border-radius:8px;outline:none}
+.search-btn{background:var(--green);border:none;padding:14px 25px;border-radius:8px;font-weight:700;cursor:pointer}
+.hero-stats{display:flex;gap:34px;margin-top:30px;flex-wrap:wrap}
+.hero-stats b{display:block;font-size:26px;color:var(--green)}
+.hero-stats span{color:#aebbd0;font-size:14px}
+
+/* GENERAL */
+section{padding:75px 7%}
+.section-title{text-align:center;margin-bottom:40px}
+.section-title h2{font-size:35px;margin-bottom:10px}
+.section-title p{color:var(--muted)}
+input:focus,select:focus{border-color:var(--green)!important;box-shadow:0 0 0 3px rgba(53,208,127,.18)}
+
+/* SPORTS */
+.sports-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.sport-card{background:#fff;border-radius:15px;padding:25px 12px;text-align:center;cursor:pointer;border:2px solid transparent;transition:.25s}
+.sport-card:hover,.sport-card.active{transform:translateY(-6px);border-color:var(--green);box-shadow:0 10px 25px rgba(0,0,0,.08)}
+.sport-card.active{background:#e9f9f0}
+.sport-icon{font-size:42px;margin-bottom:12px}
+.sport-card h3{font-size:15px}
+.sport-card p{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* VENUES */
+.venues{background:#eef2f7}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;background:#fff;padding:12px;border-radius:12px;margin-bottom:14px}
+.filter-bar input,.filter-bar select{padding:11px;border:1px solid #dce2ea;border-radius:8px;outline:none;background:#fff}
+.filter-bar input{flex:1;min-width:200px}
+.link-btn{background:none;border:none;color:var(--green-d);font-weight:700;cursor:pointer;padding:0 8px}
+.result-count{color:var(--muted);font-size:14px;margin-bottom:18px}
+.venue-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}
+.venue-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,.06);transition:.25s;display:flex;flex-direction:column}
+.venue-card:hover{transform:translateY(-5px)}
+.img-wrap{position:relative}
+.venue-image{height:210px;width:100%;object-fit:cover;display:block}
+.venue-image.ph{display:grid;place-items:center;font-size:70px;background:linear-gradient(135deg,#0b2344,#14864c)}
+.badge-type{position:absolute;top:12px;left:12px;background:rgba(7,26,51,.85);color:#fff;font-size:12px;padding:5px 10px;border-radius:20px}
+.venue-info{padding:20px;display:flex;flex-direction:column;flex:1}
+.venue-info h3{font-size:20px;margin-bottom:8px}
+.location{color:var(--muted);font-size:14px;margin-bottom:10px}
+.rating{color:var(--amber);margin-bottom:15px}
+.rating span{color:#777;font-size:13px}
+.tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.tag{background:#e9f9f0;color:var(--green-d);padding:6px 10px;border-radius:20px;font-size:12px}
+.price-row{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.price{font-size:20px;font-weight:700}
+.price small{font-size:12px;color:#777;font-weight:400}
+.book-btn{background:var(--navy);color:#fff;border:none;padding:11px 17px;border-radius:8px;cursor:pointer;font-weight:600}
+.book-btn:hover{background:var(--green);color:var(--navy)}
+.empty{grid-column:1/-1;text-align:center;padding:50px;background:#fff;border-radius:16px;color:var(--muted)}
+.empty div{font-size:44px;margin-bottom:10px}
+
+/* FEATURES */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}
+.feature{background:#fff;padding:30px;border-radius:15px;text-align:center}
+.feature-icon{font-size:40px;margin-bottom:15px}
+.feature p{color:var(--muted);margin-top:10px;line-height:1.5}
+
+/* CTA + FOOTER */
+.cta{background:var(--navy);color:#fff;text-align:center}
+.cta h2{font-size:40px;margin-bottom:15px}
+.cta p{color:#cbd5e1;margin-bottom:25px}
+.cta button{background:var(--green);border:none;padding:14px 28px;border-radius:8px;font-weight:700;cursor:pointer}
+footer{background:var(--navy2);color:#fff;padding:45px 7%}
+.footer-content{display:flex;justify-content:space-between;gap:30px}
+.footer-text{color:#aeb9c8;margin-top:10px;max-width:400px;line-height:1.6}
+.footer-links{display:flex;gap:50px}
+.footer-links h4{margin-bottom:15px}
+.footer-links a{display:block;color:#aeb9c8;text-decoration:none;margin-bottom:9px;cursor:pointer}
+.footer-links a:hover{color:var(--green)}
+.mode-pill{display:inline-block;margin-top:14px;font-size:12px;padding:5px 10px;border-radius:20px;background:rgba(255,255,255,.08);color:#aeb9c8}
+
+/* MODALS */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-box{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px;padding:30px;position:relative;animation:popup .2s ease}
+.modal-box.sm{max-width:400px}
+@keyframes popup{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.close{position:absolute;right:20px;top:14px;font-size:28px;cursor:pointer;color:#555;line-height:1}
+.form-group{margin-bottom:14px}
+.form-group label,.lbl{display:block;margin-bottom:7px;font-weight:700;font-size:14px}
+.form-group input,.form-group select{width:100%;padding:12px;border:1px solid #d5dbe5;border-radius:8px;outline:none;background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.confirm-btn{width:100%;background:var(--green);border:none;padding:14px;border-radius:8px;font-weight:700;cursor:pointer;color:var(--navy);font-size:15px}
+.confirm-btn:disabled{opacity:.55;cursor:not-allowed}
+.ghost-btn{background:#fff;border:1px solid #d5dbe5;padding:13px 18px;border-radius:8px;cursor:pointer;font-weight:600}
+.danger-btn{background:var(--red);color:#fff;border:none;padding:13px 18px;border-radius:8px;cursor:pointer;font-weight:700}
+.row-btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.row-btns .confirm-btn{flex:1}
+.err{color:var(--red);font-size:13px;min-height:18px;margin:4px 0}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px}
+
+/* AUTH */
+.auth-tabs{display:flex;background:#eef2f7;border-radius:10px;padding:4px;margin:6px 0 22px}
+.auth-tabs button{flex:1;border:none;background:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;color:var(--muted)}
+.auth-tabs button.on{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.auth-head{text-align:center;margin-bottom:6px}
+.pw-wrap{position:relative}
+.pw-wrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px}
+.demo-box{margin-top:14px;padding:12px;border:1px dashed var(--green);border-radius:10px;background:#f2fcf6;font-size:13px;text-align:center}
+.demo-box button{margin-top:8px}
+.otp-input{letter-spacing:10px;text-align:center;font-size:24px!important;font-weight:800}
+
+/* BOOKING */
+.bk-head{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+.bk-ic{width:52px;height:52px;border-radius:12px;background:#e9f9f0;display:grid;place-items:center;font-size:28px;flex-shrink:0}
+.bk-head h2{font-size:21px}
+.bk-head p{font-size:14px}
+.steps{display:flex;gap:6px;margin-bottom:20px}
+.steps span{flex:1;text-align:center;font-size:12px;font-weight:700;padding:8px 4px;border-radius:6px;background:#eef2f7;color:var(--muted)}
+.steps span.on{background:var(--navy);color:#fff}
+.steps span.done{background:#e9f9f0;color:var(--green-d)}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-height:44px}
+.slot{padding:10px 4px;border:1px solid #d5dbe5;background:#fff;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
+.slot:hover:not(:disabled){border-color:var(--green)}
+.slot.sel{background:var(--green);border-color:var(--green);color:var(--navy)}
+.slot:disabled{background:#f1f3f6;color:#b3bac5;text-decoration:line-through;cursor:not-allowed}
+.slots-loading{grid-column:1/-1;text-align:center;color:var(--muted);padding:14px;font-size:14px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:10px 0 16px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid #d5dbe5}
+.summary{background:#f5f7fb;border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px}
+.summary div{display:flex;justify-content:space-between;padding:4px 0}
+.summary .tot{border-top:1px dashed #cfd6e0;margin-top:6px;padding-top:10px;font-weight:800;font-size:17px}
+.mini-sum{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f5f7fb;border-radius:10px;padding:14px;margin-bottom:18px}
+.mini-sum span{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+.mini-sum .big{font-size:22px;font-weight:800}
+.pay-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.pay-tab{border:1.5px solid #d5dbe5;background:#fff;border-radius:10px;padding:10px 4px;cursor:pointer;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pay-tab span{font-size:22px}
+.pay-tab.on{border-color:var(--green);background:#e9f9f0}
+.note{background:#fff8e6;border:1px solid #fde3a7;border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
+.secure{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(7,26,51,.3);border-top-color:var(--navy);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.success-top{text-align:center;margin-bottom:16px}
+.success-top div{font-size:54px}
+.success-top h2{margin:6px 0}
+.mail-note{text-align:center;font-size:13px;margin:-6px 0 14px;color:var(--muted)}
+
+/* RECEIPT */
+.receipt{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.rc-top{background:var(--navy);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+.rc-top .logo{font-size:22px}
+.rc-meta{text-align:right;font-size:12px}
+.rc-meta strong{display:block;letter-spacing:2px;font-size:13px}
+.rc-status{margin:16px 20px 4px;display:inline-block;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;letter-spacing:.5px}
+.st-paid{background:#e9f9f0;color:var(--green-d)}
+.st-due{background:#fff3dc;color:#a36a00}
+.st-cancel{background:#fdecec;color:var(--red)}
+.rc-tbl{width:calc(100% - 40px);margin:8px 20px;border-collapse:collapse;font-size:13px}
+.rc-tbl td{padding:7px 0;border-bottom:1px solid #f0f2f5;vertical-align:top}
+.rc-tbl td:first-child{color:var(--muted);width:40%}
+.rc-tbl td:last-child{text-align:right;font-weight:600}
+.rc-lines{margin:6px 20px;font-size:14px}
+.rc-lines div{display:flex;justify-content:space-between;padding:5px 0}
+.rc-total{border-top:2px solid var(--navy);margin-top:6px;padding-top:10px!important;font-weight:800;font-size:18px}
+.rc-foot{font-size:11px;color:var(--muted);text-align:center;padding:14px 20px 18px}
+
+/* DASHBOARD */
+.dash{padding:40px 7% 70px}
+.dash-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px;flex-wrap:wrap}
+.dash-head h1{font-size:32px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:20px}
+.stat{background:#fff;border-radius:16px;padding:20px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.04)}
+.stat-ic{width:50px;height:50px;border-radius:12px;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.stat b{display:block;font-size:26px}
+.stat span{color:var(--muted);font-size:13px}
+.stat small{display:block;color:var(--green-d);font-size:12px;margin-top:2px}
+.dash-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:18px;margin-bottom:20px}
+.panel{background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
+.panel h3{font-size:17px;margin-bottom:14px}
+.next{background:linear-gradient(135deg,var(--navy),#0f3a63);color:#fff}
+.next .muted{color:#aebbd0}
+.next-big{display:flex;gap:14px;align-items:center;margin:6px 0 14px}
+.next-big .bk-ic{background:rgba(255,255,255,.1)}
+.next h4{font-size:19px}
+.countdown{display:inline-block;background:var(--green);color:var(--navy);font-weight:800;padding:7px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}
+.next .ghost-btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.35);padding:10px 14px}
+.next .danger-btn{padding:10px 14px}
+.bar-row{margin-bottom:12px}
+.bar-row div:first-child{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar{height:10px;background:#eef2f7;border-radius:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#1fb06a);border-radius:10px}
+.prof-top{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.prof-top .av{width:52px;height:52px;font-size:18px}
+.prof-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px solid #f0f2f5;word-break:break-all}
+.prof-row span:first-child{color:var(--muted);word-break:normal}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tabs button{background:none;border:none;padding:12px 14px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--text);border-color:var(--green)}
+.tabs em{font-style:normal;background:#eef2f7;padding:2px 8px;border-radius:10px;font-size:12px;margin-left:4px}
+.bk-row{display:grid;grid-template-columns:48px 1.6fr 1.2fr .8fr auto auto;gap:16px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+.bk-row .bk-ic{width:48px;height:48px;font-size:24px}
+.bk-row h4{font-size:15px;margin-bottom:3px}
+.bk-row p,.bk-when span,.bk-amt span{font-size:12px;color:var(--muted)}
+.bk-when strong,.bk-amt{display:block;font-size:14px}
+.bk-amt{font-weight:800}
+.bk-amt span{display:block;font-weight:400}
+.badge{font-size:11px;font-weight:800;padding:6px 10px;border-radius:20px;white-space:nowrap}
+.b-up{background:#e7f0ff;color:#2459c7}
+.b-on{background:#fff3dc;color:#a36a00}
+.b-done{background:#e9f9f0;color:var(--green-d)}
+.b-cancel{background:#fdecec;color:var(--red)}
+.bk-actions{display:flex;gap:6px;flex-wrap:wrap}
+.sm-btn{background:#fff;border:1px solid #d5dbe5;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700}
+.sm-btn:hover{border-color:var(--green)}
+.sm-btn.red{color:var(--red);border-color:#f6c9ca}
+.sm-btn.green{background:var(--green);border-color:var(--green)}
+.tbl-wrap{overflow-x:auto}
+.pay-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.pay-tbl th{text-align:left;color:var(--muted);font-weight:700;padding:10px;border-bottom:1px solid var(--line)}
+.pay-tbl td{padding:12px 10px;border-bottom:1px solid #f0f2f5}
+
+/* TOAST */
+#toasts{position:fixed;bottom:22px;right:22px;z-index:3000;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--navy);color:#fff;padding:13px 18px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,.25);font-size:14px;border-left:4px solid var(--green);animation:popup .2s ease;max-width:340px}
+.toast.err{border-color:var(--red)}
+#printArea{display:none}
+@media print{
+ body.printing>*:not(#printArea){display:none!important}
+ body.printing #printArea{display:block;max-width:560px;margin:0 auto}
+ .rc-top{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* RESPONSIVE */
+@media (max-width:1000px){
+ .sports-grid{grid-template-columns:repeat(3,1fr)}
+ .venue-grid{grid-template-columns:repeat(2,1fr)}
+ .stats{grid-template-columns:repeat(2,1fr)}
+ .dash-grid{grid-template-columns:1fr 1fr}
+ .dash-grid .next{grid-column:1/-1}
+ .bk-row{grid-template-columns:48px 1fr auto}
+ .bk-row .bk-when,.bk-row .bk-amt{grid-column:2}
+ .bk-row .badge{grid-column:3;grid-row:1}
+ .bk-row .bk-actions{grid-column:2/-1}
+}
+@media (max-width:750px){
+ .burger{display:block}
+ .nav-links{display:none;position:absolute;top:100%;left:0;right:0;background:var(--navy);flex-direction:column;padding:10px 7% 20px;gap:16px}
+ .nav-links.open{display:flex}
+ .nav-right{margin-left:auto}
+ .search-box{flex-direction:column}
+ .hero{padding-top:70px;padding-bottom:70px}
+ .venue-grid,.features,.dash-grid{grid-template-columns:1fr}
+ .footer-content{flex-direction:column}
+ .footer-links{flex-wrap:wrap}
+ .pay-tabs{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:500px){
+ section{padding:55px 5%}
+ .navbar{padding:14px 5%;gap:10px}
+ .sports-grid{grid-template-columns:repeat(2,1fr)}
+ .hero h1{font-size:43px}
+ .stats{grid-template-columns:1fr}
+ .grid2{grid-template-columns:1fr}
+ .slots{grid-template-columns:repeat(3,1fr)}
+ .nav-user .uname,.nav-ghost.hide-sm{display:none}
+ .modal-box{padding:24px 18px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="logo" onclick="go('home')">Sport<span>Spot</span></div>
+  <ul class="nav-links" id="navLinks">
+    <li><a onclick="go('home','home')">Home</a></li>
+    <li><a onclick="go('home','sports')">Sports</a></li>
+    <li><a onclick="go('home','venues')">Venues</a></li>
+    <li><a onclick="go('home','features')">Why Us</a></li>
+    <li id="navDash" hidden><a onclick="go('dash')">My Dashboard</a></li>
+  </ul>
+  <div class="nav-right" id="navRight"></div>
+  <button class="burger" onclick="toggleMenu()" aria-label="Menu">☰</button>
+</nav>
+
+<!-- ============ HOME VIEW ============ -->
+<main id="view-home">
+  <header class="hero" id="home">
+    <div class="hero-content">
+      <h1>Find Your Game.<br><span>Book Your Court.</span></h1>
+      <p>Discover and book the best sports venues near you. Play cricket, football, badminton, tennis, basketball and more — with live slot availability and instant email receipts.</p>
+      <div class="search-box">
+        <input type="text" id="locationSearch" list="areaList" placeholder="📍 Area or venue (e.g. Satellite)">
+        <datalist id="areaList"></datalist>
+        <select id="sportSearch"><option value="">All Sports</option></select>
+        <input type="date" id="dateSearch">
+        <button class="search-btn" onclick="searchVenues()">Search</button>
+      </div>
+      <div class="hero-stats" id="heroStats"></div>
+    </div>
+  </header>
+
+  <section id="sports">
+    <div class="section-title">
+      <h2>Choose Your Sport</h2>
+      <p>Pick a sport and find a place to play. Click again to show all.</p>
+    </div>
+    <div class="sports-grid" id="sportsGrid"></div>
+  </section>
+
+  <section class="venues" id="venues">
+    <div class="section-title">
+      <h2>Popular Venues</h2>
+      <p>Book your favourite sports venue in just a few clicks.</p>
+    </div>
+    <div class="filter-bar">
+      <input id="fq" placeholder="🔍 Search venue, area or sport">
+      <select id="fsport"><option value="">All sports</option></select>
+      <select id="fprice">
+        <option value="99999">Any price</option>
+        <option value="400">Under ₹400/hr</option>
+        <option value="700">Under ₹700/hr</option>
+        <option value="1000">Under ₹1,000/hr</option>
+      </select>
+      <select id="frating">
+        <option value="0">Any rating</option>
+        <option value="4.5">4.5+ ★</option>
+        <option value="4.7">4.7+ ★</option>
+      </select>
+      <select id="fsort">
+        <option value="popular">Most popular</option>
+        <option value="rating">Top rated</option>
+        <option value="low">Price: low to high</option>
+        <option value="high">Price: high to low</option>
+      </select>
+      <button class="link-btn" onclick="clearFilters()">Clear</button>
+    </div>
+    <p class="result-count" id="resultCount"></p>
+    <div class="venue-grid" id="venueGrid"></div>
+  </section>
+
+  <section id="features">
+    <div class="section-title">
+      <h2>Why SportSpot?</h2>
+      <p>Everything you need to get on the field.</p>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="feature-icon">📍</div><h3>Find Nearby</h3><p>Search venues by area, sport, price and rating.</p></div>
+      <div class="feature"><div class="feature-icon">⏱️</div><h3>Live Slots</h3><p>See which slots are free — no double bookings, ever.</p></div>
+      <div class="feature"><div class="feature-icon">💳</div><h3>Easy Payments</h3><p>Pay with UPI, card, net banking, or at the venue.</p></div>
+      <div class="feature"><div class="feature-icon">📧</div><h3>Email Receipts</h3><p>Get a confirmation email and PDF receipt for every booking.</p></div>
+      <div class="feature"><div class="feature-icon">📊</div><h3>Your Dashboard</h3><p>Track hours played, spending and upcoming games.</p></div>
+      <div class="feature"><div class="feature-icon">↩️</div><h3>Easy Cancellation</h3><p>Cancel future bookings in one click with a refund note.</p></div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Ready to Play?</h2>
+    <p>Find your perfect sports venue and start playing today.</p>
+    <button onclick="go('home','venues')">Find a Venue</button>
+  </section>
+</main>
+
+<!-- ============ DASHBOARD VIEW ============ -->
+<main id="view-dash" hidden>
+  <div class="dash">
+    <div class="dash-head">
+      <div><p class="muted" id="dSub"></p><h1 id="dGreet"></h1></div>
+      <button class="nav-btn" onclick="go('home','venues')">+ New Booking</button>
+    </div>
+    <div class="stats" id="dStats"></div>
+    <div class="dash-grid">
+      <div class="panel next" id="dNext"></div>
+      <div class="panel" id="dSports"></div>
+      <div class="panel" id="dProfile"></div>
+    </div>
+    <div class="panel">
+      <div class="tabs" id="dTabs"></div>
+      <div id="dList"></div>
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-content">
+    <div>
+      <div class="logo">Sport<span>Spot</span></div>
+      <p class="footer-text">Find, book and play at the best sports venues around you.</p>
+      <span class="mode-pill" id="modePill"></span>
+    </div>
+    <div class="footer-links">
+      <div><h4>Explore</h4><a onclick="go('home','home')">Home</a><a onclick="go('home','sports')">Sports</a><a onclick="go('home','venues')">Venues</a></div>
+      <div><h4>Account</h4><a onclick="go('dash')">Dashboard</a><a onclick="openAuth('login')">Login</a><a onclick="openAuth('register')">Register</a></div>
+      <div><h4>Company</h4><a>About</a><a>Contact</a><a>Privacy</a></div>
+    </div>
+  </div>
+  <p style="margin-top:35px;color:#718096;text-align:center;">© 2026 SportSpot. Hackathon Prototype.</p>
+</footer>
+
+<!-- AUTH MODAL -->
+<div class="modal" id="authModal">
+  <div class="modal-box sm" style="max-width:440px">
+    <span class="close" onclick="closeModal('authModal')">×</span>
+    <div class="auth-head"><div class="logo" style="color:var(--navy)">Sport<span>Spot</span></div></div>
+    <div class="auth-tabs" id="authTabs">
+      <button id="tabLogin" onclick="authTab('login')">Login</button>
+      <button id="tabReg" onclick="authTab('register')">Register</button>
+    </div>
+
+    <form id="loginForm" onsubmit="return doLogin(event)" novalidate>
+      <div class="form-group"><label>Email</label><input type="email" id="lEmail" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label>
+        <div class="pw-wrap"><input type="password" id="lPass" placeholder="Your password" autocomplete="current-password"><button type="button" onclick="togglePw('lPass')">👁</button></div>
+      </div>
+      <p class="err" id="lErr"></p>
+      <button class="confirm-btn" type="submit" id="lBtn">Login</button>
+      <div class="demo-box" id="demoBox">
+        Just exploring? Try the demo account<br><b>demo@sportspot.in</b> / <b>demo123</b><br>
+        <button type="button" class="sm-btn green" onclick="demoLogin()">Use demo account</button>
+      </div>
+    </form>
+
+    <form id="regForm" onsubmit="return doRegister(event)" novalidate hidden>
+      <div class="form-group"><label>Full name</label><input id="rName" placeholder="Your name" autocomplete="name"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="rEmail" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="form-group"><label>Phone number</label><input type="tel" id="rPhone" placeholder="10-digit mobile number" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+      <div class="grid2">
+        <div class="form-group"><label>Password</label><input type="password" id="rPass" placeholder="Min 6 characters" autocomplete="new-password"></div>
+        <div class="form-group"><label>Confirm</label><input type="password" id="rPass2" placeholder="Repeat password" autocomplete="new-password"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="rTerms"> I agree to the Terms &amp; Privacy Policy</label>
+      <p class="err" id="rErr"></p>
+      <button class="confirm-btn" type="submit" id="rBtn">Create account</button>
+    </form>
+
+    <div id="otpStep" hidden>
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:44px">📩</div>
+        <h2>Verify your email</h2>
+        <p class="muted" id="otpMsg" style="font-size:14px;margin-top:6px"></p>
+      </div>
+      <div class="form-group"><input id="otpIn" class="otp-input" maxlength="6" placeholder="••••••" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+      <p class="err" id="oErr"></p>
+      <button class="confirm-btn" id="oBtn" onclick="verifyOtp()">Verify &amp; continue</button>
+      <p style="text-align:center;margin-top:12px;font-size:13px"><button class="link-btn" onclick="resendOtp()">Resend code</button> · <button class="link-btn" onclick="authTab('register')">Change details</button></p>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal" id="bookModal">
+  <div class="modal-box">
+    <span class="close" onclick="closeModal('bookModal')">×</span>
+    <div id="bookBody"></div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="modal" id="receiptModal">
+  <div class="modal-box">
+    <span class="close" onclick="closeModal('receiptModal')" style="color:#fff;z-index:2">×</span>
+    <div id="rcBody"></div>
+    <div class="row-btns">
+      <button class="ghost-btn" id="rcPrint">🖨 Print</button>
+      <button class="ghost-btn" id="rcMail">📧 Email me</button>
+      <button class="confirm-btn" id="rcPdf">⬇ Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal" id="confirmModal">
+  <div class="modal-box sm">
+    <h3 id="cfTitle" style="margin-bottom:8px"></h3>
+    <p class="muted" id="cfMsg" style="line-height:1.5"></p>
+    <div class="row-btns"><button class="ghost-btn" style="flex:1" onclick="closeModal('confirmModal')">Keep it</button><button class="danger-btn" style="flex:1" id="cfOk"></button></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<div id="printArea"></div>
+
+<script>
+/* ================== DATA ================== */
+const ICON={Cricket:'🏏',Football:'⚽',Badminton:'🏸',Tennis:'🎾',Basketball:'🏀',Volleyball:'🏐'};
+const SPORTS=Object.keys(ICON);
+const IMG={
+  bad:'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=900&q=80',
+  foot:'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=900&q=80',
+  cri:'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=900&q=80',
+  ten:'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=900&q=80',
+  bask:'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=80',
+  vol:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=900&q=80'
+};
+const VENUES=[
+  {id:'v1',name:'Smash Arena',sport:'Badminton',area:'Satellite',price:350,rating:4.8,reviews:212,type:'Indoor',img:IMG.bad,amen:['Parking','Equipment','AC'],courts:['Court 1','Court 2','Court 3']},
+  {id:'v2',name:'City Football Ground',sport:'Football',area:'Bodakdev',price:1200,rating:4.7,reviews:168,type:'Outdoor',img:IMG.foot,amen:['Floodlights','Parking'],courts:['Turf A','Turf B']},
+  {id:'v3',name:'Champions Cricket Academy',sport:'Cricket',area:'Navrangpura',price:800,rating:4.9,reviews:305,type:'Outdoor',img:IMG.cri,amen:['Nets','Coaching'],courts:['Net 1','Net 2','Net 3']},
+  {id:'v4',name:'Ace Tennis Club',sport:'Tennis',area:'Prahlad Nagar',price:500,rating:4.6,reviews:97,type:'Outdoor',img:IMG.ten,amen:['Coaching','Changing Room'],courts:['Court A','Court B']},
+  {id:'v5',name:'Hoops Arena',sport:'Basketball',area:'Thaltej',price:600,rating:4.8,reviews:141,type:'Indoor',img:IMG.bask,amen:['Parking','Water'],courts:['Main Court']},
+  {id:'v6',name:'Victory Sports Club',sport:'Volleyball',area:'Vastrapur',price:450,rating:4.7,reviews:88,type:'Indoor',img:IMG.vol,amen:['Locker','Water'],courts:['Court 1','Court 2']},
+  {id:'v7',name:'Shuttle Hub',sport:'Badminton',area:'Maninagar',price:300,rating:4.5,reviews:76,type:'Indoor',img:IMG.bad,amen:['AC','Parking'],courts:['Court 1','Court 2']},
+  {id:'v8',name:'Box Turf 11',sport:'Football',area:'SG Highway',price:900,rating:4.6,reviews:190,type:'Outdoor',img:IMG.foot,amen:['Floodlights','Cafe'],courts:['Turf 1','Turf 2']},
+  {id:'v9',name:'Boundary Box Cricket',sport:'Cricket',area:'Gota',price:700,rating:4.4,reviews:64,type:'Outdoor',img:IMG.cri,amen:['Floodlights','Parking'],courts:['Box 1']}
+];
+const PAY=[{k:'upi',n:'UPI',i:'📱'},{k:'card',n:'Card',i:'💳'},{k:'netbanking',n:'Net Banking',i:'🏦'},{k:'venue',n:'Pay at Venue',i:'🏟️'}];
+const BANKS=['State Bank of India','HDFC Bank','ICICI Bank','Axis Bank','Kotak Mahindra Bank','Bank of Baroda'];
+const OPEN=6, CLOSE=22; // venue hours 6 AM – 10 PM
+
+/* ================== MODE ================== */
+const USE_DB=/^https:\/\/.+/.test(CONFIG.SUPABASE_URL)&&!!window.supabase;
+const USE_EMAIL=!CONFIG.EMAILJS_PUBLIC_KEY.startsWith('PASTE');
+
+/* ================== HELPERS ================== */
+const $=s=>document.querySelector(s);
+const inr=n=>Number(n).toLocaleString('en-IN');
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr=()=>ymd(new Date());
+const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return d};
+const dt=(s,h)=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,h,0,0)};
+const fmtD=s=>dt(s,0).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+const fmtH=h=>`${h%12||12}:00 ${h>=12?'PM':'AM'}`;
+const shortH=h=>`${h%12||12} ${h>=12?'PM':'AM'}`;
+const fmtRange=(s,n)=>`${fmtH(s)} – ${fmtH(s+n)}`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const calc=(p,h)=>{const sub=p*h,tax=Math.round(sub*.18);return{sub,tax,total:sub+tax}};
+const initials=n=>(n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const stars=r=>'★'.repeat(Math.round(r))+'☆'.repeat(5-Math.round(r));
+function hn(s){let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return h}
+const hash=s=>'h'+hn('ss-salt:'+s).toString(16); // demo mode only (Supabase handles real passwords)
+
+function toast(msg,type='ok',ms=3500){
+  const t=document.createElement('div');t.className='toast'+(type==='err'?' err':'');t.innerHTML=msg;
+  $('#toasts').appendChild(t);setTimeout(()=>t.remove(),ms);
+}
+function busy(btn,on,label){if(!btn)return;if(on){btn.dataset.l=btn.innerHTML;btn.disabled=true;btn.innerHTML=`<span class="spin"></span>${label||'Please wait…'}`}else{btn.disabled=false;btn.innerHTML=btn.dataset.l||btn.innerHTML}}
+function openModal(id){$('#'+id).classList.add('open');document.body.style.overflow='hidden'}
+function closeModal(id){$('#'+id).classList.remove('open');if(!document.querySelector('.modal.open'))document.body.style.overflow=''}
+function ask(title,msg,okText,fn){
+  $('#cfTitle').textContent=title;$('#cfMsg').innerHTML=msg;$('#cfOk').textContent=okText;
+  $('#cfOk').onclick=()=>{closeModal('confirmModal');fn()};openModal('confirmModal');
+}
+function imgFail(el){const d=document.createElement('div');d.className='venue-image ph';d.textContent=el.dataset.icon;el.replaceWith(d)}
+
+/* ================== BOOKING OBJECT <-> DATABASE ROW ================== */
+const toRow=b=>({id:b.id,user_id:b.userId,user_name:b.userName,user_email:b.userEmail,venue_id:b.venueId,venue_name:b.venueName,area:b.area,sport:b.sport,
+  court:b.court,date:b.date,start_hour:b.start,hours:b.hours,players:b.players,rate:b.rate,sub:b.sub,tax:b.tax,total:b.total,
+  method:b.method,method_name:b.methodName,detail:b.detail,txn:b.txn,payment_status:b.paymentStatus,status:b.status});
+const fromRow=r=>({id:r.id,userId:r.user_id,userName:r.user_name,userEmail:r.user_email,venueId:r.venue_id,venueName:r.venue_name,area:r.area,sport:r.sport,
+  court:r.court,date:r.date,start:r.start_hour,hours:r.hours,players:r.players,rate:r.rate,sub:r.sub,tax:r.tax,total:r.total,
+  method:r.method,methodName:r.method_name,detail:r.detail,txn:r.txn,paymentStatus:r.payment_status,status:r.status,createdAt:new Date(r.created_at).getTime()});
+
+/* =====================================================================
+   BACKEND A: SUPABASE (real database + real email verification)
+   ===================================================================== */
+let sb=null;
+const SB={
+  async init(){
+    sb=window.supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+    const{data:{session}}=await sb.auth.getSession();
+    return session?SB.profile(session.user):null;
+  },
+  async profile(user){
+    const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    const md=user.user_metadata||{};
+    return{id:user.id,email:user.email,name:data?.full_name||md.full_name||'Player',phone:data?.phone||md.phone||'',since:(data?.created_at||user.created_at||new Date().toISOString()).slice(0,10)};
+  },
+  async register({name,email,phone,password}){
+    const{data,error}=await sb.auth.signUp({email,password,options:{data:{full_name:name,phone},emailRedirectTo:location.origin}});
+    if(error)throw error;
+    if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)throw new Error('An account with this email already exists. Try logging in.');
+    if(data.session)return{user:await SB.profile(data.user)}; // email confirmation turned off
+    return{needsOtp:true};
+  },
+  async verifyOtp(email,code){
+    const{data,error}=await sb.auth.verifyOtp({email,token:code,type:'signup'});
+    if(error)throw new Error('Invalid or expired code. Please try again.');
+    return SB.profile(data.user);
+  },
+  async resend(email){const{error}=await sb.auth.resend({type:'signup',email});if(error)throw error},
+  async login(email,password){
+    const{data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error)throw new Error(/confirm/i.test(error.message)?'Please verify your email first (check your inbox).':'Invalid email or password.');
+    return SB.profile(data.user);
+  },
+  async logout(){await sb.auth.signOut()},
+  async updateProfile({name,phone}){
+    const{error}=await sb.from('profiles').update({full_name:name,phone}).eq('id',me.id);if(error)throw error;
+  },
+  async myBookings(){
+    const{data,error}=await sb.from('bookings').select('*').eq('user_id',me.id).order('date',{ascending:true});
+    if(error)throw error;return data.map(fromRow);
+  },
+  async taken(vid,date){
+    const{data,error}=await sb.rpc('get_taken_slots',{p_venue:vid,p_date:date});
+    if(error)throw error;return data.map(r=>({court:r.court,start:r.start_hour,hours:r.hours}));
+  },
+  async createBooking(b){
+    const{data,error}=await sb.from('bookings').insert(toRow(b)).select().single();
+    if(error){if(error.code==='23P01')throw new Error('Sorry, that slot was just booked by someone else.');throw error}
+    return fromRow(data);
+  },
+  async cancel(id){
+    const{error}=await sb.from('bookings').update({status:'Cancelled',cancelled_at:new Date().toISOString()}).eq('id',id);if(error)throw error;
+  }
+};
+
+/* =====================================================================
+   BACKEND B: DEMO MODE (no setup — data saved in this browser only)
+   ===================================================================== */
+const KEY='sportspot-db';
+let L=null, localOtp='', pendingLocal=null;
+const persist={
+  async load(){
+    try{if(window.storage){const r=await window.storage.get(KEY,false);if(r&&r.value)return JSON.parse(r.value)}}catch(e){}
+    try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}
+  },
+  async save(){
+    const s=JSON.stringify(L);
+    try{if(window.storage){await window.storage.set(KEY,s,false);return}}catch(e){}
+    try{localStorage.setItem(KEY,s)}catch(e){}
+  }
+};
+const pub=u=>({id:u.id||u.email,email:u.email,name:u.name,phone:u.phone,since:u.since});
+const LOCAL={
+  async init(){
+    L=await persist.load();
+    if(!L||!Array.isArray(L.users)||!L.users.length){L=seedLocal();await persist.save()}
+    L.users.forEach(u=>u.id=u.id||u.email);
+    L.bookings.forEach(b=>b.userId=b.userId||b.userEmail);
+    const u=L.users.find(x=>x.email===L.session);return u?pub(u):null;
+  },
+  async register({name,email,phone,password}){
+    if(L.users.some(u=>u.email===email))throw new Error('An account with this email already exists. Try logging in.');
+    pendingLocal={id:email,name,email,phone,pass:hash(password),since:todayStr()};
+    LOCAL.sendCode();return{needsOtp:true};
+  },
+  sendCode(){localOtp=String(Math.floor(100000+Math.random()*900000));toast(`📩 Demo OTP: <b>${localOtp}</b><br><small>(Demo mode – no real email sent)</small>`,'ok',10000)},
+  async resend(){LOCAL.sendCode()},
+  async verifyOtp(email,code){
+    if(code!==localOtp||!pendingLocal)throw new Error('Incorrect code. Please try again.');
+    L.users.push(pendingLocal);L.session=pendingLocal.email;await persist.save();const u=pub(pendingLocal);pendingLocal=null;return u;
+  },
+  async login(email,password){
+    const u=L.users.find(x=>x.email===email);
+    if(!u||u.pass!==hash(password))throw new Error('Invalid email or password.');
+    L.session=u.email;await persist.save();return pub(u);
+  },
+  async logout(){L.session=null;await persist.save()},
+  async updateProfile({name,phone}){const u=L.users.find(x=>x.email===me.email);u.name=name;u.phone=phone;await persist.save()},
+  async myBookings(){return L.bookings.filter(b=>b.userId===me.id)},
+  async taken(vid,date){return L.bookings.filter(b=>b.venueId===vid&&b.date===date&&b.status!=='Cancelled').map(b=>({court:b.court,start:b.start,hours:b.hours}))},
+  async createBooking(b){
+    if(L.bookings.some(x=>x.venueId===b.venueId&&x.court===b.court&&x.date===b.date&&x.status!=='Cancelled'&&b.start<x.start+x.hours&&x.start<b.start+b.hours))
+      throw new Error('Sorry, that slot was just booked by someone else.');
+    L.bookings.push(b);await persist.save();return b;
+  },
+  async cancel(id){const b=L.bookings.find(x=>x.id===id);if(b){b.status='Cancelled';b.cancelledAt=Date.now()}await persist.save()}
+};
+function seedLocal(){
+  const demo={id:'demo@sportspot.in',name:'Demo Player',email:'demo@sportspot.in',phone:'9876543210',pass:hash('demo123'),since:ymd(addDays(-75))};
+  const db={users:[demo],bookings:[],session:null};
+  const mk=(vid,off,start,hours,method,detail,cancel)=>{
+    const v=VENUES.find(x=>x.id===vid),date=ymd(addDays(off));
+    const b=makeBooking(demo,v,v.courts[0],date,start,hours,off>0?4:2,method,detail,dt(date,start).getTime()-2*864e5);
+    if(cancel)b.status='Cancelled';db.bookings.push(b);
+  };
+  mk('v1',-28,18,1,'upi','demo@okaxis');mk('v3',-20,7,2,'card','Visa •••• 4242');mk('v2',-13,19,1,'upi','demo@okaxis');
+  mk('v1',-9,6,2,'venue','');mk('v4',-6,17,1,'netbanking','HDFC Bank',true);mk('v5',-3,18,1,'card','RuPay •••• 1188');
+  mk('v1',2,18,1,'upi','demo@okaxis');mk('v3',5,7,2,'venue','');
+  return db;
+}
+
+const API=USE_DB?SB:LOCAL;
+
+/* =====================================================================
+   EMAIL (EmailJS) — sends booking confirmation + receipt
+   ===================================================================== */
+async function sendReceiptEmail(b){
+  if(!USE_EMAIL)return'off';
+  try{
+    const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({service_id:CONFIG.EMAILJS_SERVICE_ID,template_id:CONFIG.EMAILJS_TEMPLATE_ID,user_id:CONFIG.EMAILJS_PUBLIC_KEY,
+        template_params:{to_email:b.userEmail,to_name:b.userName,booking_id:b.id,venue:b.venueName,sport:b.sport,court:b.court,
+          date:fmtD(b.date),time:fmtRange(b.start,b.hours),total:'₹'+inr(b.total),payment:payLabel(b)[0],receipt_html:emailReceiptHTML(b)}})
+    });
+    return r.ok?'sent':'fail';
+  }catch(e){return'fail'}
+}
+async function emailAndToast(b){
+  const r=await sendReceiptEmail(b);
+  if(r==='sent')toast(`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`);
+  else if(r==='fail')toast('Could not send the email receipt. You can download the PDF instead.','err',5000);
+  return r;
+}
+function emailReceiptHTML(b){
+  const[lbl]=payLabel(b);
+  const col=lbl.startsWith('CANCEL')?'#e5484d':lbl.includes('DUE')?'#a36a00':'#14864c';
+  const bg=lbl.startsWith('CANCEL')?'#fdecec':lbl.includes('DUE')?'#fff3dc':'#e9f9f0';
+  const row=(k,v)=>`<tr><td style="padding:9px 0;color:#697386;border-bottom:1px solid #eef0f3;font-size:14px">${k}</td><td style="padding:9px 0;text-align:right;font-weight:bold;border-bottom:1px solid #eef0f3;font-size:14px;color:#172033">${v}</td></tr>`;
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:540px;margin:0 auto;border:1px solid #e3e8ef;border-radius:12px;overflow:hidden;background:#ffffff">
+  <div style="background:#071a33;color:#ffffff;padding:18px 22px">
+    <span style="font-size:22px;font-weight:bold">Sport<span style="color:#35d07f">Spot</span></span>
+    <span style="float:right;font-size:12px;line-height:28px;letter-spacing:1px">RECEIPT · ${b.id}</span>
+  </div>
+  <div style="padding:22px">
+    <p style="margin:0 0 6px;font-size:16px;color:#172033">Hi ${esc(b.userName)},</p>
+    <p style="margin:0 0 16px;color:#444;font-size:14px;line-height:1.5">Your booking is <b>confirmed</b>. See you on the ${b.sport==='Football'?'field':'court'}! 🎉</p>
+    <span style="display:inline-block;background:${bg};color:${col};font-weight:bold;font-size:12px;padding:6px 12px;border-radius:14px">${lbl}</span>
+    <table style="width:100%;border-collapse:collapse;margin-top:12px">
+      ${row('Venue',`${b.venueName}, ${b.area}`)}${row('Sport · Court',`${b.sport} · ${b.court}`)}
+      ${row('Date',fmtD(b.date))}${row('Time',`${fmtRange(b.start,b.hours)} (${b.hours} hr)`)}
+      ${row('Players',b.players)}${row('Payment',`${b.methodName}${b.detail?' · '+esc(b.detail):''}`)}${row('Transaction ID',b.txn)}
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:14px">
+      <tr><td style="padding:5px 0;color:#444">Court charges (₹${inr(b.rate)} × ${b.hours} hr)</td><td style="text-align:right">₹${inr(b.sub)}</td></tr>
+      <tr><td style="padding:5px 0;color:#444">GST (18%)</td><td style="text-align:right">₹${inr(b.tax)}</td></tr>
+      <tr><td style="padding:12px 0 0;font-size:18px;font-weight:bold;border-top:2px solid #071a33">Total</td><td style="padding:12px 0 0;text-align:right;font-size:18px;font-weight:bold;border-top:2px solid #071a33">₹${inr(b.total)}</td></tr>
+    </table>
+    <p style="font-size:12px;color:#888;text-align:center;margin:22px 0 0;line-height:1.5">Please show this email at the venue and arrive 10 minutes early.<br>SportSpot · Hackathon prototype · simulated payment</p>
+  </div></div>`;
+}
+
+/* ================== STATE ================== */
+let me=null, myB=[], takenCache={}, pending=null, heroDate='', B=null, dTab='upcoming', editing=false, otpEmail='';
+const F={q:'',sport:'',maxPrice:99999,minRating:0,sort:'popular'};
+
+/* ================== NAV / VIEWS ================== */
+function renderNav(){
+  $('#navDash').hidden=!me;
+  $('#navRight').innerHTML=me
+    ?`<button class="nav-user" onclick="go('dash')"><span class="av">${esc(initials(me.name))}</span><span class="uname">${esc(me.name.split(' ')[0])}</span></button>
+      <button class="nav-ghost hide-sm" onclick="logout()">Logout</button>`
+    :`<button class="nav-ghost" onclick="openAuth('login')">Login</button><button class="nav-btn" onclick="openAuth('register')">Sign up</button>`;
+}
+function toggleMenu(){$('#navLinks').classList.toggle('open')}
+function closeMenu(){$('#navLinks').classList.remove('open')}
+function go(view,anchor){
+  closeMenu();
+  if(view==='dash'&&!me){pending=()=>go('dash');openAuth('login');toast('Please log in to see your dashboard');return}
+  $('#view-home').hidden=view!=='home';
+  $('#view-dash').hidden=view!=='dash';
+  if(view==='dash')renderDash();
+  if(anchor)setTimeout(()=>document.getElementById(anchor).scrollIntoView({behavior:'smooth'}),30);
+  else window.scrollTo({top:0,behavior:'smooth'});
+}
+const dashOpen=()=>!$('#view-dash').hidden;
+
+/* ================== HOME: SPORTS & VENUES ================== */
+function renderSports(){
+  $('#sportsGrid').innerHTML=SPORTS.map(s=>{
+    const n=VENUES.filter(v=>v.sport===s).length;
+    return `<div class="sport-card ${F.sport===s?'active':''}" onclick="filterSport('${s}')"><div class="sport-icon">${ICON[s]}</div><h3>${s}</h3><p>${n} venue${n!==1?'s':''}</p></div>`}).join('');
+}
+function filterSport(s){F.sport=F.sport===s?'':s;syncFilterUI();renderVenues();renderSports();go('home','venues')}
+function syncFilterUI(){$('#fq').value=F.q;$('#fsport').value=F.sport;$('#fprice').value=F.maxPrice;$('#frating').value=F.minRating;$('#fsort').value=F.sort}
+function clearFilters(){Object.assign(F,{q:'',sport:'',maxPrice:99999,minRating:0,sort:'popular'});heroDate='';syncFilterUI();renderVenues();renderSports()}
+function searchVenues(){
+  F.q=$('#locationSearch').value.trim();F.sport=$('#sportSearch').value;heroDate=$('#dateSearch').value;
+  syncFilterUI();renderVenues();renderSports();go('home','venues');
+}
+function renderVenues(){
+  const q=F.q.toLowerCase();
+  let list=VENUES.filter(v=>(!q||(v.name+' '+v.area+' '+v.sport).toLowerCase().includes(q))&&(!F.sport||v.sport===F.sport)&&v.price<=F.maxPrice&&v.rating>=F.minRating);
+  const S={popular:(a,b)=>b.reviews-a.reviews,rating:(a,b)=>b.rating-a.rating,low:(a,b)=>a.price-b.price,high:(a,b)=>b.price-a.price};
+  list.sort(S[F.sort]);
+  $('#resultCount').textContent=`Showing ${list.length} of ${VENUES.length} venues${heroDate?' · for '+fmtD(heroDate):''}`;
+  $('#venueGrid').innerHTML=list.length?list.map(v=>`
+    <div class="venue-card">
+      <div class="img-wrap"><img class="venue-image" src="${v.img}" alt="${v.sport} at ${v.name}" loading="lazy" data-icon="${ICON[v.sport]}" onerror="imgFail(this)"><span class="badge-type">${v.type}</span></div>
+      <div class="venue-info">
+        <h3>${v.name}</h3>
+        <div class="location">📍 ${v.area}, Ahmedabad</div>
+        <div class="rating">${stars(v.rating)} <span>${v.rating} (${v.reviews} reviews)</span></div>
+        <div class="tags">${[v.sport,...v.amen].map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="price-row"><div class="price">₹${inr(v.price)} <small>/ hour</small></div><button class="book-btn" onclick="openBooking('${v.id}')">Book Now</button></div>
+      </div>
+    </div>`).join('')
+    :`<div class="empty"><div>🔍</div>No venues match your filters.<br><button class="link-btn" style="margin-top:10px" onclick="clearFilters()">Clear filters</button></div>`;
+}
+
+/* ================== AUTH ================== */
+function openAuth(tab){closeMenu();authTab(tab);openModal('authModal');setTimeout(()=>(tab==='login'?$('#lEmail'):$('#rName')).focus(),50)}
+function authTab(t){
+  $('#loginForm').hidden=t!=='login';$('#regForm').hidden=t!=='register';$('#otpStep').hidden=true;$('#authTabs').hidden=false;
+  $('#tabLogin').classList.toggle('on',t==='login');$('#tabReg').classList.toggle('on',t==='register');
+  ['#lErr','#rErr','#oErr'].forEach(s=>$(s).textContent='');
+}
+function togglePw(id){const i=$('#'+id);i.type=i.type==='password'?'text':'password'}
+async function doLogin(e){
+  e&&e.preventDefault&&e.preventDefault();
+  const em=$('#lEmail').value.trim().toLowerCase(),pw=$('#lPass').value;
+  if(!em||!pw){$('#lErr').textContent='Enter your email and password.';return false}
+  $('#lErr').textContent='';busy($('#lBtn'),true,'Logging in…');
+  try{const u=await API.login(em,pw);await login(u,`Welcome back, ${esc(u.name.split(' ')[0])}! 👋`)}
+  catch(err){$('#lErr').textContent=err.message||'Login failed.'}
+  finally{busy($('#lBtn'),false)}
+  return false;
+}
+function demoLogin(){$('#lEmail').value='demo@sportspot.in';$('#lPass').value='demo123';doLogin()}
+async function doRegister(e){
+  e.preventDefault();
+  const name=$('#rName').value.trim(),email=$('#rEmail').value.trim().toLowerCase(),phone=$('#rPhone').value.trim(),p1=$('#rPass').value,p2=$('#rPass2').value;
+  const err=m=>{$('#rErr').textContent=m;return false};
+  if(name.length<2)return err('Please enter your full name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))return err('Please enter a valid email address.');
+  if(!/^[6-9]\d{9}$/.test(phone))return err('Enter a valid 10-digit Indian mobile number.');
+  if(p1.length<6)return err('Password must be at least 6 characters.');
+  if(p1!==p2)return err('Passwords do not match.');
+  if(!$('#rTerms').checked)return err('Please accept the Terms to continue.');
+  err('');busy($('#rBtn'),true,'Creating account…');
+  try{
+    const r=await API.register({name,email,phone,password:p1});
+    if(r.user)await login(r.user,`🎉 Account created! Welcome, ${esc(name.split(' ')[0])}.`);
+    else showOtp(email);
+  }catch(x){err(x.message||'Could not create account.')}
+  finally{busy($('#rBtn'),false)}
+  return false;
+}
+function showOtp(email){
+  otpEmail=email;
+  $('#loginForm').hidden=true;$('#regForm').hidden=true;$('#authTabs').hidden=true;$('#otpStep').hidden=false;
+  $('#otpMsg').innerHTML=`We sent a verification code to <b>${esc(email)}</b>`;
+  $('#otpIn').value='';$('#oErr').textContent='';setTimeout(()=>$('#otpIn').focus(),50);
+}
+async function verifyOtp(){
+  const code=$('#otpIn').value.trim();
+  if(code.length<6){$('#oErr').textContent='Enter the 6-digit code.';return}
+  busy($('#oBtn'),true,'Verifying…');
+  try{const u=await API.verifyOtp(otpEmail,code);await login(u,`🎉 Email verified! Welcome, ${esc(u.name.split(' ')[0])}.`)}
+  catch(x){$('#oErr').textContent=x.message}
+  finally{busy($('#oBtn'),false)}
+}
+async function resendOtp(){try{await API.resend(otpEmail);if(USE_DB)toast('New code sent. Check your inbox.')}catch(x){toast(x.message||'Please wait a minute before resending.','err')}}
+async function login(u,msg){
+  me=u;
+  try{myB=await API.myBookings()}catch(e){myB=[];toast('Could not load your bookings.','err')}
+  closeModal('authModal');renderNav();toast(msg);
+  if(pending){const p=pending;pending=null;p()}else go('dash');
+}
+async function logout(){try{await API.logout()}catch(e){}me=null;myB=[];renderNav();go('home');toast('You have been logged out.')}
+
+/* ================== AVAILABILITY ================== */
+const busyByOthers=(vid,court,date,h)=>!USE_DB&&hn(vid+court+date+h)%5===0; // demo mode only
+async function loadTaken(vid,date,force){
+  const k=vid+'|'+date;
+  if(!force&&takenCache[k])return;
+  try{takenCache[k]=await API.taken(vid,date)}catch(e){takenCache[k]=[];toast('Could not load live availability.','err')}
+}
+function slotFree(vid,court,date,h,hrs){
+  if(h+hrs>CLOSE)return false;
+  if(dt(date,h)<=new Date())return false;
+  for(let k=h;k<h+hrs;k++)if(busyByOthers(vid,court,date,k))return false;
+  const t=takenCache[vid+'|'+date]||[];
+  return !t.some(b=>b.court===court&&h<b.start+b.hours&&b.start<h+hrs);
+}
+const anyFree=(v,court,date,hrs)=>{for(let h=OPEN;h<CLOSE;h++)if(slotFree(v.id,court,date,h,hrs))return true;return false};
+
+/* ================== BOOKING FLOW ================== */
+async function openBooking(id){
+  if(!me){pending=()=>openBooking(id);openAuth('login');toast('Please log in to book a venue');return}
+  const v=VENUES.find(x=>x.id===id);
+  let date=heroDate&&heroDate>=todayStr()?heroDate:todayStr();
+  B={v,court:v.courts[0],date,start:null,hours:1,players:2,method:'upi'};
+  step1(true);openModal('bookModal');
+  await loadTaken(v.id,date,true);
+  if(date===todayStr()&&!anyFree(v,B.court,date,1)){B.date=ymd(addDays(1));$('#bDate').value=B.date;await loadTaken(v.id,B.date,true)}
+  renderSlots();
+}
+function head(v,step){
+  const s=['1. Slot','2. Payment','3. Receipt'].map((t,i)=>`<span class="${i+1===step?'on':i+1<step?'done':''}">${t}</span>`).join('');
+  return `<div class="bk-head"><div class="bk-ic">${ICON[v.sport]}</div><div><h2>${v.name}</h2><p class="muted">📍 ${v.area}, Ahmedabad · ₹${inr(v.price)}/hour</p></div></div><div class="steps">${s}</div>`;
+}
+function step1(loading){
+  const v=B.v;
+  $('#bookBody').innerHTML=head(v,1)+`
+    <div class="grid2">
+      <div class="form-group"><label>Court</label><select id="bCourt">${v.courts.map(c=>`<option ${c===B.court?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Date</label><input type="date" id="bDate" min="${todayStr()}" value="${B.date}"></div>
+      <div class="form-group"><label>Duration</label><select id="bHours">${[1,2,3].map(h=>`<option value="${h}" ${h===B.hours?'selected':''}>${h} hour${h>1?'s':''}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Players</label><input type="number" id="bPlayers" min="1" max="30" value="${B.players}"></div>
+    </div>
+    <label class="lbl">Start time</label>
+    <div class="slots" id="slots"></div>
+    <div class="legend"><span><i></i>Available</span><span><i style="background:#f1f3f6"></i>Booked / past</span><span><i style="background:var(--green);border-color:var(--green)"></i>Selected</span></div>
+    <div class="summary" id="sum"></div>
+    <button class="confirm-btn" id="toPay" onclick="step2()">Continue to payment →</button>`;
+  $('#bCourt').onchange=e=>{B.court=e.target.value;renderSlots()};
+  $('#bDate').onchange=async e=>{let d=e.target.value;if(!d||d<todayStr()){d=todayStr();e.target.value=d}B.date=d;slotsLoading();await loadTaken(B.v.id,d,true);renderSlots()};
+  $('#bHours').onchange=e=>{B.hours=+e.target.value;renderSlots()};
+  $('#bPlayers').oninput=e=>{B.players=Math.max(1,Math.min(30,parseInt(e.target.value)||1))};
+  if(loading)slotsLoading();else renderSlots();
+}
+function slotsLoading(){$('#slots').innerHTML='<div class="slots-loading"><span class="spin"></span>Checking live availability…</div>';$('#sum').innerHTML='';$('#toPay').disabled=true}
+function renderSlots(){
+  if(!$('#slots'))return;
+  if(B.start!=null&&!slotFree(B.v.id,B.court,B.date,B.start,B.hours))B.start=null;
+  let html='';
+  for(let h=OPEN;h<CLOSE;h++){
+    const ok=slotFree(B.v.id,B.court,B.date,h,B.hours);
+    html+=`<button class="slot ${B.start===h?'sel':''}" ${ok?'':'disabled title="Not available"'} onclick="B.start=${h};renderSlots()">${shortH(h)}</button>`;
+  }
+  $('#slots').innerHTML=html;
+  const c=calc(B.v.price,B.hours);
+  $('#sum').innerHTML=B.start==null
+    ?`<div class="muted" style="justify-content:center">Pick a start time to see your total.</div>`
+    :`<div><span>${fmtD(B.date)} · ${fmtRange(B.start,B.hours)}</span></div>
+      <div><span>Court charges (₹${inr(B.v.price)} × ${B.hours} hr)</span><span>₹${inr(c.sub)}</span></div>
+      <div><span>GST (18%)</span><span>₹${inr(c.tax)}</span></div>
+      <div class="tot"><span>Total</span><span>₹${inr(c.total)}</span></div>`;
+  $('#toPay').disabled=B.start==null;
+}
+function step2(){
+  if(B.start==null)return;
+  const c=calc(B.v.price,B.hours);
+  $('#bookBody').innerHTML=head(B.v,2)+`
+    <div class="mini-sum"><div><strong>${B.court} · ${B.players} player${B.players>1?'s':''}</strong><span>${fmtD(B.date)} · ${fmtRange(B.start,B.hours)}</span></div><div class="big">₹${inr(c.total)}</div></div>
+    <label class="lbl">Payment method</label>
+    <div class="pay-tabs">${PAY.map(p=>`<button class="pay-tab ${B.method===p.k?'on':''}" onclick="B.method='${p.k}';step2()"><span>${p.i}</span>${p.n}</button>`).join('')}</div>
+    <div id="payFields">${payFields(c.total)}</div>
+    <p class="err" id="payErr"></p>
+    <div class="row-btns"><button class="ghost-btn" onclick="step1()">← Back</button><button class="confirm-btn" id="payBtn" onclick="pay()">${B.method==='venue'?'Confirm booking':'Pay ₹'+inr(c.total)}</button></div>
+    <p class="secure">🔒 Simulated payment — no real money is charged.${USE_EMAIL?'<br>📧 Receipt will be emailed to '+esc(me.email):''}</p>`;
+}
+function payFields(total){
+  if(B.method==='upi')return `<div class="form-group"><label>UPI ID</label><input id="upiId" placeholder="yourname@okaxis"></div><p class="muted" style="font-size:12px">Works with GPay, PhonePe, Paytm, BHIM and more.</p>`;
+  if(B.method==='card')return `
+    <div class="form-group"><label>Card number</label><input id="cNum" inputmode="numeric" placeholder="1234 5678 9012 3456" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim()"></div>
+    <div class="form-group"><label>Name on card</label><input id="cName" placeholder="As printed on card" value="${esc(me.name)}"></div>
+    <div class="grid2">
+      <div class="form-group"><label>Expiry</label><input id="cExp" placeholder="MM/YY" maxlength="5" oninput="let d=this.value.replace(/\\D/g,'').slice(0,4);this.value=d.length>2?d.slice(0,2)+'/'+d.slice(2):d"></div>
+      <div class="form-group"><label>CVV</label><input id="cCvv" type="password" maxlength="3" placeholder="•••" oninput="this.value=this.value.replace(/\\D/g,'')"></div>
+    </div>`;
+  if(B.method==='netbanking')return `<div class="form-group"><label>Select your bank</label><select id="bank"><option value="">Choose bank</option>${BANKS.map(b=>`<option>${b}</option>`).join('')}</select></div>`;
+  return `<div class="note">🏟️ Your slot will be reserved now. Pay <b>₹${inr(total)}</b> by cash or UPI at the venue counter. Please arrive 10 minutes early and show your receipt.</div>`;
+}
+async function pay(){
+  const err=m=>{$('#payErr').textContent=m};err('');
+  let detail='';
+  if(B.method==='upi'){
+    const u=$('#upiId').value.trim();
+    if(!/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(u))return err('Enter a valid UPI ID (e.g. name@okaxis).');
+    detail=u;
+  }else if(B.method==='card'){
+    const n=$('#cNum').value.replace(/\s/g,''),ex=$('#cExp').value,cv=$('#cCvv').value;
+    if(n.length!==16)return err('Card number must be 16 digits.');
+    if(!$('#cName').value.trim())return err('Enter the name on the card.');
+    const m=ex.match(/^(\d{2})\/(\d{2})$/);
+    if(!m||+m[1]<1||+m[1]>12)return err('Enter expiry as MM/YY.');
+    const now=new Date(),yy=now.getFullYear()%100,mm=now.getMonth()+1;
+    if(+m[2]<yy||(+m[2]===yy&&+m[1]<mm))return err('This card has expired.');
+    if(cv.length!==3)return err('CVV must be 3 digits.');
+    const brand=n[0]==='4'?'Visa':n[0]==='5'?'Mastercard':n[0]==='6'?'RuPay':'Card';
+    detail=`${brand} •••• ${n.slice(-4)}`;
+  }else if(B.method==='netbanking'){
+    detail=$('#bank').value;if(!detail)return err('Please choose your bank.');
+  }
+  const btn=$('#payBtn');busy(btn,true,'Processing payment…');
+  await loadTaken(B.v.id,B.date,true);
+  if(!slotFree(B.v.id,B.court,B.date,B.start,B.hours)){toast('Sorry, that slot was just taken. Please pick another.','err');B.start=null;step1();return}
+  await new Promise(r=>setTimeout(r,1200)); // simulated payment gateway
+  try{
+    const saved=await API.createBooking(makeBooking(me,B.v,B.court,B.date,B.start,B.hours,B.players,B.method,detail));
+    myB.push(saved);delete takenCache[B.v.id+'|'+B.date];
+    step3(saved);if(dashOpen())renderDash();
+  }catch(x){
+    toast(x.message||'Booking failed. Please try again.','err',5000);
+    await loadTaken(B.v.id,B.date,true);B.start=null;step1();
+  }
+}
+function newId(){return 'SS'+String(Date.now()).slice(-6)+Math.floor(10+Math.random()*90)}
+function makeBooking(u,v,court,date,start,hours,players,method,detail,createdAt){
+  const c=calc(v.price,hours),P=PAY.find(p=>p.k===method);
+  return{id:newId()+(createdAt?String(start):''),txn:method==='venue'?'N/A':'TXN'+Math.random().toString(36).slice(2,10).toUpperCase(),
+    userId:u.id||u.email,userEmail:u.email,userName:u.name,venueId:v.id,venueName:v.name,area:v.area,sport:v.sport,court,date,start,hours,players,
+    rate:v.price,...c,method,methodName:P.n,detail,paymentStatus:method==='venue'?'Pending':'Paid',status:'Confirmed',createdAt:createdAt||Date.now()};
+}
+function step3(b){
+  $('#bookBody').innerHTML=`
+    <div class="success-top"><div>✅</div><h2>Booking Confirmed!</h2><p class="muted">Booking ID <b>${b.id}</b> · see you on the ${b.sport==='Football'?'field':'court'}!</p></div>
+    <p class="mail-note" id="mailNote">${USE_EMAIL?'<span class="spin"></span>Sending receipt to '+esc(b.userEmail)+'…':''}</p>
+    ${receiptHTML(b)}
+    <div class="row-btns"><button class="ghost-btn" style="flex:1" onclick="closeModal('bookModal');go('dash')">📊 My Dashboard</button><button class="confirm-btn" onclick="downloadPDF('${b.id}')">⬇ Download PDF receipt</button></div>`;
+  toast(`Booking <b>${b.id}</b> confirmed 🎉`);
+  if(USE_EMAIL)sendReceiptEmail(b).then(r=>{const n=$('#mailNote');
+    if(n)n.innerHTML=r==='sent'?`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`:'⚠️ Email could not be sent — download the PDF below.';
+    if(r==='sent')toast(`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`)});
+}
+
+/* ================== RECEIPT & PDF ================== */
+function statusOf(b){
+  if(b.status==='Cancelled')return'Cancelled';
+  const n=new Date();
+  if(dt(b.date,b.start+b.hours)<=n)return'Completed';
+  if(dt(b.date,b.start)<=n)return'Ongoing';
+  return'Upcoming';
+}
+function payLabel(b){
+  const s=statusOf(b);
+  if(s==='Cancelled')return b.paymentStatus==='Paid'?['CANCELLED · REFUND INITIATED','st-cancel']:['CANCELLED','st-cancel'];
+  if(b.paymentStatus==='Paid')return['PAID','st-paid'];
+  return s==='Completed'?['PAID AT VENUE','st-paid']:['PAYMENT DUE AT VENUE','st-due'];
+}
+function receiptHTML(b){
+  const[lbl,cls]=payLabel(b);
+  return `<div class="receipt">
+    <div class="rc-top"><div class="logo">Sport<span>Spot</span></div><div class="rc-meta"><strong>RECEIPT</strong>${b.id}</div></div>
+    <span class="rc-status ${cls}">${lbl}</span>
+    <table class="rc-tbl">
+      <tr><td>Customer</td><td>${esc(b.userName)}</td></tr>
+      <tr><td>Email</td><td>${esc(b.userEmail)}</td></tr>
+      <tr><td>Venue</td><td>${b.venueName}, ${b.area}</td></tr>
+      <tr><td>Sport · Court</td><td>${b.sport} · ${b.court}</td></tr>
+      <tr><td>Date</td><td>${fmtD(b.date)}</td></tr>
+      <tr><td>Time</td><td>${fmtRange(b.start,b.hours)} (${b.hours} hr)</td></tr>
+      <tr><td>Players</td><td>${b.players}</td></tr>
+      <tr><td>Payment method</td><td>${b.methodName}${b.detail?' · '+esc(b.detail):''}</td></tr>
+      <tr><td>Transaction ID</td><td>${b.txn}</td></tr>
+      <tr><td>Booked on</td><td>${new Date(b.createdAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</td></tr>
+    </table>
+    <div class="rc-lines">
+      <div><span>Court charges (₹${inr(b.rate)} × ${b.hours} hr)</span><span>₹${inr(b.sub)}</span></div>
+      <div><span>GST (18%)</span><span>₹${inr(b.tax)}</span></div>
+      <div class="rc-total"><span>Total</span><span>₹${inr(b.total)}</span></div>
+    </div>
+    <p class="rc-foot">Thank you for playing with SportSpot! Show this receipt at the venue.<br>Hackathon prototype · simulated payment.</p>
+  </div>`;
+}
+function showReceipt(id){
+  const b=myB.find(x=>x.id===id);if(!b)return;
+  $('#rcBody').innerHTML=receiptHTML(b);
+  $('#rcPdf').onclick=()=>downloadPDF(id);$('#rcPrint').onclick=()=>printReceipt(b);
+  $('#rcMail').onclick=async()=>{
+    if(!USE_EMAIL){toast('Email is not set up yet (add your EmailJS keys in CONFIG).','err',5000);return}
+    busy($('#rcMail'),true,'Sending…');await emailAndToast(b);busy($('#rcMail'),false);
+  };
+  openModal('receiptModal');
+}
+function printReceipt(b){
+  $('#printArea').innerHTML=receiptHTML(b);document.body.classList.add('printing');
+  setTimeout(()=>{try{window.print()}catch(e){}document.body.classList.remove('printing')},50);
+}
+const pdfSafe=s=>String(s).replace(/₹/g,'Rs. ').replace(/[–—]/g,'-').replace(/•/g,'*').replace(/·/g,'|').replace(/[^\x20-\x7E]/g,'');
+function downloadPDF(id){
+  const b=myB.find(x=>x.id===id);if(!b)return;
+  if(!window.jspdf){toast('PDF library not loaded — opening print dialog. Choose "Save as PDF".','err',5000);return printReceipt(b)}
+  try{
+    const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a5'}),W=148,Lm=12,R=W-12;
+    d.setFillColor(7,26,51);d.rect(0,0,W,30,'F');
+    d.setFont('helvetica','bold');d.setFontSize(20);d.setTextColor(255,255,255);d.text('Sport',Lm,15);
+    d.setTextColor(53,208,127);d.text('Spot',Lm+d.getTextWidth('Sport'),15);
+    d.setFontSize(9);d.setFont('helvetica','normal');d.setTextColor(200,210,225);d.text('Find, book and play',Lm,22);
+    d.setFont('helvetica','bold');d.setFontSize(12);d.setTextColor(255,255,255);d.text('RECEIPT',R,14,{align:'right'});
+    d.setFont('helvetica','normal');d.setFontSize(9);d.text(b.id,R,21,{align:'right'});
+    const[lbl]=payLabel(b);const col=lbl.startsWith('CANCEL')?[229,72,77]:lbl.includes('DUE')?[163,106,0]:[20,134,76];
+    d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(...col);d.text(pdfSafe(lbl),Lm,41);
+    let y=50;
+    const row=(k,v)=>{d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(105,115,134);d.text(k,Lm,y);
+      d.setTextColor(23,32,51);d.setFont('helvetica','bold');d.text(pdfSafe(v),R,y,{align:'right'});
+      d.setDrawColor(236,239,243);d.line(Lm,y+2.8,R,y+2.8);y+=8};
+    row('Customer',b.userName);row('Email',b.userEmail);row('Venue',`${b.venueName}, ${b.area}`);row('Sport | Court',`${b.sport} | ${b.court}`);
+    row('Date',fmtD(b.date));row('Time',`${fmtRange(b.start,b.hours)} (${b.hours} hr)`);row('Players',String(b.players));
+    row('Payment method',b.methodName+(b.detail?' | '+b.detail:''));row('Transaction ID',b.txn);
+    row('Booked on',new Date(b.createdAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}));
+    y+=4;
+    row(`Court charges (Rs. ${inr(b.rate)} x ${b.hours} hr)`,'Rs. '+inr(b.sub));row('GST (18%)','Rs. '+inr(b.tax));
+    y+=2;d.setDrawColor(7,26,51);d.setLineWidth(.6);d.line(Lm,y-4,R,y-4);
+    d.setFontSize(13);d.setFont('helvetica','bold');d.setTextColor(23,32,51);d.text('Total',Lm,y+3);d.text('Rs. '+inr(b.total),R,y+3,{align:'right'});
+    d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(120,130,145);
+    d.text('Thank you for playing with SportSpot! Show this receipt at the venue.',W/2,192,{align:'center'});
+    d.text('Hackathon prototype - simulated payment. Generated '+new Date().toLocaleString('en-IN'),W/2,197,{align:'center'});
+    d.save(`SportSpot-Receipt-${b.id}.pdf`);toast('🧾 Receipt downloaded');
+  }catch(e){console.error(e);toast('Download blocked here — opening print dialog. Choose "Save as PDF".','err',5000);printReceipt(b)}
+}
+
+/* ================== DASHBOARD ================== */
+function renderDash(){
+  if(!me)return;
+  const all=myB,act=all.filter(b=>b.status!=='Cancelled'),done=all.filter(b=>statusOf(b)==='Completed');
+  const up=all.filter(b=>['Upcoming','Ongoing'].includes(statusOf(b))).sort((a,b)=>dt(a.date,a.start)-dt(b.date,b.start));
+  const canc=all.filter(b=>b.status==='Cancelled');
+  const hrs=done.reduce((s,b)=>s+b.hours,0),spent=act.reduce((s,b)=>s+b.total,0);
+  const h=new Date().getHours();
+  $('#dSub').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  $('#dGreet').textContent=`${me.name.split(' ')[0]}'s Dashboard`;
+  const stat=(ic,bg,val,lbl,sub)=>`<div class="stat"><div class="stat-ic" style="background:${bg}">${ic}</div><div><b>${val}</b><span>${lbl}</span><small>${sub}</small></div></div>`;
+  $('#dStats').innerHTML=
+    stat('🎟️','#e7f0ff',act.length,'Total bookings',`${canc.length} cancelled`)+
+    stat('⏱️','#e9f9f0',hrs,'Hours played',`${done.length} games completed`)+
+    stat('💰','#fff3dc','₹'+inr(spent),'Total spent','incl. GST')+
+    stat('📅','#fdecec',up.length,'Upcoming',up[0]?'Next: '+fmtD(up[0].date).split(',').slice(0,2).join(','):'Nothing scheduled');
+
+  const n=up[0];
+  if(n){
+    const ms=dt(n.date,n.start)-new Date(),live=ms<=0;
+    const dd=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5),mm=Math.floor(ms%36e5/6e4);
+    const cd=live?'🟢 In progress now':`⏳ Starts in ${dd?dd+'d ':''}${hh?hh+'h ':''}${dd?'':mm+'m'}`;
+    $('#dNext').innerHTML=`<p class="muted" style="font-size:13px">YOUR NEXT GAME</p>
+      <div class="next-big"><div class="bk-ic">${ICON[n.sport]}</div><div><h4>${n.venueName}</h4><p class="muted" style="font-size:13px">${n.sport} · ${n.court} · ${n.area}</p></div></div>
+      <p style="margin-bottom:10px"><b>${fmtD(n.date)}</b><br><span class="muted">${fmtRange(n.start,n.hours)}</span></p>
+      <span class="countdown">${cd}</span>
+      <div class="bk-actions"><button class="ghost-btn" onclick="showReceipt('${n.id}')">🧾 Receipt</button>${statusOf(n)==='Upcoming'?`<button class="danger-btn" onclick="cancelBooking('${n.id}')">Cancel</button>`:''}</div>`;
+  }else{
+    $('#dNext').innerHTML=`<p class="muted" style="font-size:13px">YOUR NEXT GAME</p><h4 style="margin:14px 0 8px">No upcoming games 🏖️</h4><p class="muted" style="margin-bottom:16px;font-size:14px">Time to get back on the court!</p><button class="nav-btn" onclick="go('home','venues')">Find a venue</button>`;
+  }
+
+  const by={};act.forEach(b=>by[b.sport]=(by[b.sport]||0)+b.hours);
+  const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]),max=Math.max(1,...ent.map(e=>e[1]));
+  $('#dSports').innerHTML=`<h3>Hours booked by sport</h3>`+(ent.length?ent.map(([s,v])=>`<div class="bar-row"><div><span>${ICON[s]} ${s}</span><b>${v} hr</b></div><div class="bar"><i style="width:${v/max*100}%"></i></div></div>`).join('')
+    +`<p class="muted" style="font-size:12px;margin-top:10px">Favourite: <b>${ent[0][0]}</b></p>`:`<p class="muted">Book your first game to see stats here.</p>`);
+
+  renderProfile();
+
+  const hist=done.slice().sort((a,b)=>dt(b.date,b.start)-dt(a.date,a.start));
+  const cn=canc.slice().sort((a,b)=>b.createdAt-a.createdAt);
+  const T=[['upcoming','Upcoming',up],['history','History',hist],['cancelled','Cancelled',cn],['payments','Payments',all]];
+  $('#dTabs').innerHTML=T.map(([k,l,a])=>`<button class="${dTab===k?'on':''}" onclick="dTab='${k}';renderDash()">${l}<em>${a.length}</em></button>`).join('');
+  const cur=T.find(t=>t[0]===dTab)[2];
+  if(dTab==='payments'){
+    const rows=all.slice().sort((a,b)=>b.createdAt-a.createdAt).map(b=>{const[l,c]=payLabel(b);
+      return `<tr><td>${new Date(b.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td><td><b>${b.id}</b><br><span class="muted">${b.txn}</span></td><td>${b.venueName}</td><td>${PAY.find(p=>p.k===b.method).i} ${b.methodName}${b.detail?'<br><span class="muted">'+esc(b.detail)+'</span>':''}</td><td><b>₹${inr(b.total)}</b></td><td><span class="rc-status ${c}" style="margin:0">${l}</span></td><td><button class="sm-btn" onclick="downloadPDF('${b.id}')">⬇ PDF</button></td></tr>`}).join('');
+    $('#dList').innerHTML=all.length?`<div class="tbl-wrap"><table class="pay-tbl"><tr><th>Date</th><th>Booking / Txn</th><th>Venue</th><th>Method</th><th>Amount</th><th>Status</th><th></th></tr>${rows}</table></div>`:emptyList('No payments yet.');
+  }else{
+    $('#dList').innerHTML=cur.length?cur.map(bookingRow).join(''):emptyList({upcoming:'No upcoming bookings.',history:'No completed games yet.',cancelled:'No cancelled bookings. 👍'}[dTab]);
+  }
+}
+function emptyList(m){return `<div class="empty" style="box-shadow:none;border:1px dashed var(--line)"><div>📭</div>${m}<br><button class="link-btn" style="margin-top:10px" onclick="go('home','venues')">Browse venues →</button></div>`}
+function bookingRow(b){
+  const s=statusOf(b),cls={Upcoming:'b-up',Ongoing:'b-on',Completed:'b-done',Cancelled:'b-cancel'}[s];
+  const lbl=s==='Ongoing'?'In progress':s;
+  let act=`<button class="sm-btn" onclick="showReceipt('${b.id}')">🧾 Receipt</button>`;
+  if(s==='Upcoming')act+=`<button class="sm-btn red" onclick="cancelBooking('${b.id}')">Cancel</button>`;
+  if(s==='Completed'||s==='Cancelled')act+=`<button class="sm-btn green" onclick="openBooking('${b.venueId}')">Book again</button>`;
+  return `<div class="bk-row">
+    <div class="bk-ic">${ICON[b.sport]}</div>
+    <div><h4>${b.venueName}</h4><p>${b.sport} · ${b.court} · 📍 ${b.area}</p></div>
+    <div class="bk-when"><strong>${fmtD(b.date)}</strong><span>${fmtRange(b.start,b.hours)}</span></div>
+    <div class="bk-amt">₹${inr(b.total)}<span>${b.methodName}</span></div>
+    <span class="badge ${cls}">${lbl}</span>
+    <div class="bk-actions">${act}</div>
+  </div>`;
+}
+function cancelBooking(id){
+  const b=myB.find(x=>x.id===id);if(!b||statusOf(b)!=='Upcoming')return;
+  const refund=b.paymentStatus==='Paid'?`<br><br>A refund of <b>₹${inr(b.total)}</b> will go back to your ${b.methodName} in 5–7 working days.`:'';
+  ask('Cancel this booking?',`${b.venueName} · ${fmtD(b.date)} · ${fmtRange(b.start,b.hours)}${refund}`,'Yes, cancel',async()=>{
+    try{
+      await API.cancel(id);b.status='Cancelled';delete takenCache[b.venueId+'|'+b.date];renderDash();
+      toast(`Booking ${b.id} cancelled${b.paymentStatus==='Paid'?' · refund initiated':''}`);
+    }catch(e){toast('Could not cancel. Please try again.','err')}
+  });
+}
+function renderProfile(){
+  const u=me;
+  $('#dProfile').innerHTML=editing?`
+    <h3>Edit profile</h3>
+    <div class="form-group"><label>Full name</label><input id="pName" value="${esc(u.name)}"></div>
+    <div class="form-group"><label>Phone</label><input id="pPhone" maxlength="10" value="${esc(u.phone)}" oninput="this.value=this.value.replace(/\\D/g,'')"></div>
+    <p class="err" id="pErr"></p>
+    <div class="row-btns" style="margin-top:4px"><button class="ghost-btn" style="flex:1" onclick="editing=false;renderProfile()">Cancel</button><button class="confirm-btn" style="flex:1" id="pBtn" onclick="saveProfile()">Save</button></div>`
+  :`<div class="prof-top"><span class="av">${esc(initials(u.name))}</span><div><b>${esc(u.name)}</b><p class="muted" style="font-size:13px">Player</p></div></div>
+    <div class="prof-row"><span>Email</span><span>${esc(u.email)}</span></div>
+    <div class="prof-row"><span>Phone</span><span>${u.phone?'+91 '+esc(u.phone):'—'}</span></div>
+    <div class="prof-row"><span>Member since</span><span>${fmtD(u.since)}</span></div>
+    <div class="row-btns"><button class="ghost-btn" style="flex:1" onclick="editing=true;renderProfile()">✏️ Edit</button><button class="danger-btn" style="flex:1" onclick="logout()">Logout</button></div>`;
+}
+async function saveProfile(){
+  const n=$('#pName').value.trim(),p=$('#pPhone').value.trim();
+  if(n.length<2){$('#pErr').textContent='Please enter your full name.';return}
+  if(!/^[6-9]\d{9}$/.test(p)){$('#pErr').textContent='Enter a valid 10-digit mobile number.';return}
+  busy($('#pBtn'),true,'Saving…');
+  try{await API.updateProfile({name:n,phone:p});me.name=n;me.phone=p;editing=false;renderNav();renderDash();toast('Profile updated ✅')}
+  catch(e){$('#pErr').textContent='Could not save. Please try again.';busy($('#pBtn'),false)}
+}
+
+/* ================== INIT ================== */
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=[...document.querySelectorAll('.modal.open')].pop();if(m)closeModal(m.id)}});
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+window.addEventListener('afterprint',()=>document.body.classList.remove('printing'));
+
+(async function init(){
+  const opts=SPORTS.map(s=>`<option value="${s}">${ICON[s]} ${s}</option>`).join('');
+  $('#sportSearch').innerHTML+=opts;$('#fsport').innerHTML+=opts;
+  $('#areaList').innerHTML=[...new Set(VENUES.map(v=>v.area))].map(a=>`<option value="${a}">`).join('');
+  $('#dateSearch').min=todayStr();
+  $('#heroStats').innerHTML=`<div><b>${VENUES.length}+</b><span>Venues</span></div><div><b>${SPORTS.length}</b><span>Sports</span></div><div><b>${(VENUES.reduce((s,v)=>s+v.rating,0)/VENUES.length).toFixed(1)}★</b><span>Avg rating</span></div><div><b>6AM–10PM</b><span>Open daily</span></div>`;
+  $('#fq').oninput=e=>{F.q=e.target.value;renderVenues()};
+  $('#fsport').onchange=e=>{F.sport=e.target.value;renderVenues();renderSports()};
+  $('#fprice').onchange=e=>{F.maxPrice=+e.target.value;renderVenues()};
+  $('#frating').onchange=e=>{F.minRating=+e.target.value;renderVenues()};
+  $('#fsort').onchange=e=>{F.sort=e.target.value;renderVenues()};
+  $('#locationSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchVenues()});
+  $('#demoBox').hidden=USE_DB;
+  $('#modePill').textContent=(USE_DB?'🟢 Connected to database':'🟡 Demo mode (browser storage)')+(USE_EMAIL?' · 📧 Email on':'');
+  renderSports();renderVenues();renderNav();
+
+  try{
+    const u=await API.init();
+    if(u){me=u;try{myB=await API.myBookings()}catch(e){myB=[]}}
+  }catch(e){console.error(e);toast('Could not connect to the database. Check your Supabase keys.','err',6000)}
+  renderNav();
+})();
+</script>
+</body>
+</html>
