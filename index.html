@@ -700,8 +700,15 @@ const fromRow=r=>({id:r.id,userId:r.user_id,userName:r.user_name,userEmail:r.use
 let sb=null;
 const SB={
   async init(){
+    // Detect if the user just arrived from the email confirmation link
+    const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);
+    const fromLink=h.get('type')==='signup'||h.has('access_token')||q.has('code');
+    const linkErr=h.get('error_description')||q.get('error_description');
     sb=window.supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
     const{data:{session}}=await sb.auth.getSession();
+    if(fromLink||linkErr)history.replaceState(null,'',location.pathname); // clean the address bar
+    if(linkErr)setTimeout(()=>{toast(`⚠️ ${esc(linkErr)}.<br>Try logging in — if it says "verify your email", register again for a fresh link.`,'err',9000);openAuth('login')},400);
+    else if(session&&fromLink)setTimeout(()=>{toast('🎉 Email confirmed! You are now logged in.','ok',5000);go('dash')},600);
     return session?SB.profile(session.user):null;
   },
   async profile(user){
@@ -929,7 +936,7 @@ function openAuth(tab){closeMenu();authTab(tab);openModal('authModal');setTimeou
 function authTab(t){
   $('#loginForm').hidden=t!=='login';$('#regForm').hidden=t!=='register';$('#otpStep').hidden=true;$('#authTabs').hidden=false;
   $('#tabLogin').classList.toggle('on',t==='login');$('#tabReg').classList.toggle('on',t==='register');
-  ['#lErr','#rErr','#oErr'].forEach(s=>$(s).textContent='');
+  ['#lErr','#rErr','#oErr'].forEach(s=>{const el=$(s);if(el)el.textContent=''});
 }
 function togglePw(id){const i=$('#'+id);i.type=i.type==='password'?'text':'password'}
 async function doLogin(e){
@@ -965,6 +972,18 @@ async function doRegister(e){
 function showOtp(email){
   otpEmail=email;
   $('#loginForm').hidden=true;$('#regForm').hidden=true;$('#authTabs').hidden=true;$('#otpStep').hidden=false;
+  if(USE_DB){ // real database: Supabase sends a confirmation LINK
+    $('#otpStep').innerHTML=`<div style="text-align:center">
+      <div style="font-size:54px;animation:popIn .5s cubic-bezier(.2,1.6,.4,1) backwards">📩</div>
+      <h2 style="margin:8px 0 6px">Check your inbox</h2>
+      <p class="muted" style="font-size:14px;line-height:1.6">We sent a confirmation link to<br><b style="color:var(--text)">${esc(email)}</b></p>
+      <div class="note" style="text-align:left;margin:16px 0;line-height:1.8">1. Open the email from SportSpot / Supabase<br>2. Click <b>Confirm your mail</b><br>3. You'll come back to this website, logged in ✅</div>
+      <p class="muted" style="font-size:12px;margin-bottom:14px">Can't find it? Check your Spam or Promotions folder.</p>
+      <button class="confirm-btn" onclick="authTab('login')">I've confirmed — go to Login</button>
+      <p style="margin-top:12px;font-size:13px"><button class="link-btn" onclick="resendOtp()">Resend link</button> · <button class="link-btn" onclick="authTab('register')">Change email</button></p>
+    </div>`;
+    return;
+  }
   $('#otpMsg').innerHTML=`We sent a verification code to <b>${esc(email)}</b>`;
   $('#otpIn').value='';$('#oErr').textContent='';setTimeout(()=>$('#otpIn').focus(),50);
 }
@@ -976,7 +995,7 @@ async function verifyOtp(){
   catch(x){$('#oErr').textContent=x.message}
   finally{busy($('#oBtn'),false)}
 }
-async function resendOtp(){try{await API.resend(otpEmail);if(USE_DB)toast('New code sent. Check your inbox.')}catch(x){toast(x.message||'Please wait a minute before resending.','err')}}
+async function resendOtp(){try{await API.resend(otpEmail);if(USE_DB)toast('📩 New confirmation link sent. Check your inbox.')}catch(x){toast(x.message||'Please wait a minute before resending.','err')}}
 async function login(u,msg){
   me=u;
   try{myB=await API.myBookings()}catch(e){myB=[];toast('Could not load your bookings.','err')}
