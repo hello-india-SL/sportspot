@@ -648,7 +648,7 @@ const VENUES=[
 ];
 const PAY=[{k:'upi',n:'UPI',i:'📱'},{k:'card',n:'Card',i:'💳'},{k:'netbanking',n:'Net Banking',i:'🏦'},{k:'venue',n:'Pay at Venue',i:'🏟️'}];
 const BANKS=['State Bank of India','HDFC Bank','ICICI Bank','Axis Bank','Kotak Mahindra Bank','Bank of Baroda'];
-const OPEN=6, CLOSE=22; // venue hours 6 AM – 10 PM
+const OPEN=6, CLOSE=22; // venue hours 6 AM - 10 PM
 
 /* ================== MODE ================== */
 const USE_DB=/^https:\/\/.+/.test(CONFIG.SUPABASE_URL)&&!!window.supabase;
@@ -665,7 +665,7 @@ const dt=(s,h)=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,h
 const fmtD=s=>dt(s,0).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 const fmtH=h=>`${h%12||12}:00 ${h>=12?'PM':'AM'}`;
 const shortH=h=>`${h%12||12} ${h>=12?'PM':'AM'}`;
-const fmtRange=(s,n)=>`${fmtH(s)} – ${fmtH(s+n)}`;
+const fmtRange=(s,n)=>`${fmtH(s)} - ${fmtH(s+n)}`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const calc=(p,h)=>{const sub=p*h,tax=Math.round(sub*.18);return{sub,tax,total:sub+tax}};
 const initials=n=>(n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -786,7 +786,7 @@ const LOCAL={
     pendingLocal={id:email,name,email,phone,pass:hash(password),since:todayStr()};
     LOCAL.sendCode();return{needsOtp:true};
   },
-  sendCode(){localOtp=String(Math.floor(100000+Math.random()*900000));toast(`📩 Demo OTP: <b>${localOtp}</b><br><small>(Demo mode – no real email sent)</small>`,'ok',10000)},
+  sendCode(){localOtp=String(Math.floor(100000+Math.random()*900000));toast(`📩 Demo OTP: <b>${localOtp}</b><br><small>(Demo mode - no real email sent)</small>`,'ok',10000)},
   async resend(){LOCAL.sendCode()},
   async verifyOtp(email,code){
     if(code!==localOtp||!pendingLocal)throw new Error('Incorrect code. Please try again.');
@@ -1125,7 +1125,7 @@ async function pay(){
   const btn=$('#payBtn');busy(btn,true,'Processing payment…');
   await loadTaken(B.v.id,B.date,true);
   if(!slotFree(B.v.id,B.court,B.date,B.start,B.hours)){toast('Sorry, that slot was just taken. Please pick another.','err');B.start=null;step1();return}
-  const paid=await payScreen(detail); // QR + 20–40 sec wait for online payments
+  const paid=await payScreen(detail); // QR + 20-40 sec wait for online payments
   if(!paid)return;
   try{
     const saved=await API.createBooking(makeBooking(me,B.v,B.court,B.date,B.start,B.hours,B.players,B.method,detail));
@@ -1136,7 +1136,7 @@ async function pay(){
     await loadTaken(B.v.id,B.date,true);B.start=null;step1();
   }
 }
-/* ---------- Payment screen: QR + 20–40 sec simulated wait ---------- */
+/* ---------- Payment screen: QR + 20-40 sec simulated wait ---------- */
 function qrSVG(seed){
   const N=25;let r='';
   const finder=(x,y)=>`<rect x="${x}" y="${y}" width="7" height="7" fill="#071a33"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#071a33"/>`;
@@ -1147,7 +1147,7 @@ function qrSVG(seed){
 function payScreen(detail){
   if(B.method==='venue')return Promise.resolve(true); // cash: no QR
   const c=calc(B.v.price,B.hours),P=PAY.find(p=>p.k===B.method);
-  const dur=20000+Math.floor(Math.random()*20001); // random 20–40 seconds
+  const dur=20000+Math.floor(Math.random()*20001); // random 20-40 seconds
   const ref='PAY'+Date.now().toString(36).toUpperCase();
   const lbl={
     upi:`Scan with GPay, PhonePe, Paytm or any UPI app<br><small>or approve the request sent to <b>${esc(detail)}</b></small>`,
@@ -1268,7 +1268,7 @@ function printReceipt(b){
   $('#printArea').innerHTML=receiptHTML(b);document.body.classList.add('printing');
   setTimeout(()=>{try{window.print()}catch(e){}document.body.classList.remove('printing')},50);
 }
-const pdfSafe=s=>String(s).replace(/₹/g,'Rs. ').replace(/[–-]/g,'-').replace(/•/g,'*').replace(/·/g,'|').replace(/[^\x20-\x7E]/g,'');
+const pdfSafe=s=>String(s).replace(/₹/g,'Rs. ').replace(/[--]/g,'-').replace(/•/g,'*').replace(/·/g,'|').replace(/[^\x20-\x7E]/g,'');
 function downloadPDF(id){
   const b=myB.find(x=>x.id===id);if(!b)return;
   if(!window.jspdf){toast('PDF library not loaded - opening print dialog. Choose "Save as PDF".','err',5000);return printReceipt(b)}
@@ -1370,7 +1370,7 @@ function bookingRow(b){
 }
 function cancelBooking(id){
   const b=myB.find(x=>x.id===id);if(!b||statusOf(b)!=='Upcoming')return;
-  const refund=b.paymentStatus==='Paid'?`<br><br>A refund of <b>₹${inr(b.total)}</b> will go back to your ${b.methodName} in 5–7 working days.`:'';
+  const refund=b.paymentStatus==='Paid'?`<br><br>A refund of <b>₹${inr(b.total)}</b> will go back to your ${b.methodName} in 5-7 working days.`:'';
   ask('Cancel this booking?',`${b.venueName} · ${fmtD(b.date)} · ${fmtRange(b.start,b.hours)}${refund}`,'Yes, cancel',async()=>{
     try{
       await API.cancel(id);b.status='Cancelled';delete takenCache[b.venueId+'|'+b.date];renderDash();
@@ -1411,7 +1411,7 @@ window.addEventListener('afterprint',()=>document.body.classList.remove('printin
   $('#sportSearch').innerHTML+=opts;$('#fsport').innerHTML+=opts;
   $('#areaList').innerHTML=[...new Set(VENUES.map(v=>v.area))].map(a=>`<option value="${a}">`).join('');
   $('#dateSearch').min=todayStr();
-  $('#heroStats').innerHTML=`<div><b>${VENUES.length}+</b><span>Venues</span></div><div><b>${SPORTS.length}</b><span>Sports</span></div><div><b>${(VENUES.reduce((s,v)=>s+v.rating,0)/VENUES.length).toFixed(1)}★</b><span>Avg rating</span></div><div><b>6AM–10PM</b><span>Open daily</span></div>`;
+  $('#heroStats').innerHTML=`<div><b>${VENUES.length}+</b><span>Venues</span></div><div><b>${SPORTS.length}</b><span>Sports</span></div><div><b>${(VENUES.reduce((s,v)=>s+v.rating,0)/VENUES.length).toFixed(1)}★</b><span>Avg rating</span></div><div><b>6AM-10PM</b><span>Open daily</span></div>`;
   $('#fq').oninput=e=>{F.q=e.target.value;renderVenues()};
   $('#fsport').onchange=e=>{F.sport=e.target.value;renderVenues();renderSports()};
   $('#fprice').onchange=e=>{F.maxPrice=+e.target.value;renderVenues()};
