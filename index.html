@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =====================================================================
-   ⚙️  YOUR SETTINGS — paste your keys here (see setup steps)
+   ⚙️  YOUR SETTINGS - paste your keys here (see setup steps)
    Leave as-is to run in DEMO mode (data saved in the browser only).
    ===================================================================== */
 const CONFIG = {
@@ -430,7 +430,7 @@ footer{background:var(--navy2);color:#fff;padding:45px 7%}
   <header class="hero" id="home">
     <div class="hero-content">
       <h1>Find Your Game.<br><span>Book Your Court.</span></h1>
-      <p>Discover and book the best sports venues near you. Play cricket, football, badminton, tennis, basketball and more — with live slot availability and instant email receipts.</p>
+      <p>Discover and book the best sports venues near you. Play cricket, football, badminton, tennis, basketball and more - with live slot availability and instant email receipts.</p>
       <div class="search-box">
         <input type="text" id="locationSearch" list="areaList" placeholder="📍 Area or venue (e.g. Satellite)">
         <datalist id="areaList"></datalist>
@@ -488,7 +488,7 @@ footer{background:var(--navy2);color:#fff;padding:45px 7%}
     </div>
     <div class="features">
       <div class="feature"><div class="feature-icon">📍</div><h3>Find Nearby</h3><p>Search venues by area, sport, price and rating.</p></div>
-      <div class="feature"><div class="feature-icon">⏱️</div><h3>Live Slots</h3><p>See which slots are free — no double bookings, ever.</p></div>
+      <div class="feature"><div class="feature-icon">⏱️</div><h3>Live Slots</h3><p>See which slots are free - no double bookings, ever.</p></div>
       <div class="feature"><div class="feature-icon">💳</div><h3>Easy Payments</h3><p>Pay with UPI, card, net banking, or at the venue.</p></div>
       <div class="feature"><div class="feature-icon">📧</div><h3>Email Receipts</h3><p>Get a confirmation email and PDF receipt for every booking.</p></div>
       <div class="feature"><div class="feature-icon">📊</div><h3>Your Dashboard</h3><p>Track hours played, spending and upcoming games.</p></div>
@@ -707,7 +707,7 @@ const SB={
     sb=window.supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
     const{data:{session}}=await sb.auth.getSession();
     if(fromLink||linkErr)history.replaceState(null,'',location.pathname); // clean the address bar
-    if(linkErr)setTimeout(()=>{toast(`⚠️ ${esc(linkErr)}.<br>Try logging in — if it says "verify your email", register again for a fresh link.`,'err',9000);openAuth('login')},400);
+    if(linkErr)setTimeout(()=>{toast(`⚠️ ${esc(linkErr)}.<br>Try logging in - if it says "verify your email", register again for a fresh link.`,'err',9000);openAuth('login')},400);
     else if(session&&fromLink)setTimeout(()=>{toast('🎉 Email confirmed! You are now logged in.','ok',5000);go('dash')},600);
     return session?SB.profile(session.user):null;
   },
@@ -757,7 +757,7 @@ const SB={
 };
 
 /* =====================================================================
-   BACKEND B: DEMO MODE (no setup — data saved in this browser only)
+   BACKEND B: DEMO MODE (no setup - data saved in this browser only)
    ===================================================================== */
 const KEY='sportspot-db';
 let L=null, localOtp='', pendingLocal=null;
@@ -825,7 +825,7 @@ function seedLocal(){
 const API=USE_DB?SB:LOCAL;
 
 /* =====================================================================
-   EMAIL (EmailJS) — sends booking confirmation + receipt
+   EMAIL (EmailJS) - sends booking confirmation + receipt
    ===================================================================== */
 async function sendReceiptEmail(b){
   if(!USE_EMAIL)return'off';
@@ -967,7 +967,7 @@ async function doRegister(e){
     else showOtp(email);
   }catch(x){
     const m=x.message||'';
-    err(/rate limit/i.test(m)?'Too many sign-ups right now — please try again in a few minutes.':m||'Could not create account.');
+    err(/rate limit/i.test(m)?'Too many sign-ups right now - please try again in a few minutes.':m||'Could not create account.');
   }
   finally{busy($('#rBtn'),false)}
   return false;
@@ -982,7 +982,7 @@ function showOtp(email){
       <p class="muted" style="font-size:14px;line-height:1.6">We sent a confirmation link to<br><b style="color:var(--text)">${esc(email)}</b></p>
       <div class="note" style="text-align:left;margin:16px 0;line-height:1.8">1. Open the email from SportSpot / Supabase<br>2. Click <b>Confirm your mail</b><br>3. You'll come back to this website, logged in ✅</div>
       <p class="muted" style="font-size:12px;margin-bottom:14px">Can't find it? Check your Spam or Promotions folder.</p>
-      <button class="confirm-btn" onclick="authTab('login')">I've confirmed — go to Login</button>
+      <button class="confirm-btn" onclick="authTab('login')">I've confirmed - go to Login</button>
       <p style="margin-top:12px;font-size:13px"><button class="link-btn" onclick="resendOtp()">Resend link</button> · <button class="link-btn" onclick="authTab('register')">Change email</button></p>
     </div>`;
     return;
@@ -1087,7 +1087,7 @@ function step2(){
     <div id="payFields">${payFields(c.total)}</div>
     <p class="err" id="payErr"></p>
     <div class="row-btns"><button class="ghost-btn" onclick="step1()">← Back</button><button class="confirm-btn" id="payBtn" onclick="pay()">${B.method==='venue'?'Confirm booking':'Pay ₹'+inr(c.total)}</button></div>
-    <p class="secure">🔒 Simulated payment — no real money is charged.${USE_EMAIL?'<br>📧 Receipt will be emailed to '+esc(me.email):''}</p>`;
+    <p class="secure">🔒 Simulated payment - no real money is charged.${USE_EMAIL?'<br>📧 Receipt will be emailed to '+esc(me.email):''}</p>`;
 }
 function payFields(total){
   if(B.method==='upi')return `<div class="form-group"><label>UPI ID</label><input id="upiId" placeholder="yourname@okaxis"></div><p class="muted" style="font-size:12px">Works with GPay, PhonePe, Paytm, BHIM and more.</p>`;
@@ -1211,7 +1211,7 @@ function step3(b){
     <div class="row-btns"><button class="ghost-btn" style="flex:1" onclick="closeModal('bookModal');go('dash')">📊 My Dashboard</button><button class="confirm-btn" onclick="downloadPDF('${b.id}')">⬇ Download PDF receipt</button></div>`;
   toast(`Booking <b>${b.id}</b> confirmed 🎉`);
   if(USE_EMAIL)sendReceiptEmail(b).then(r=>{const n=$('#mailNote');
-    if(n)n.innerHTML=r==='sent'?`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`:'⚠️ Email could not be sent — download the PDF below.';
+    if(n)n.innerHTML=r==='sent'?`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`:'⚠️ Email could not be sent - download the PDF below.';
     if(r==='sent')toast(`📧 Receipt emailed to <b>${esc(b.userEmail)}</b>`)});
 }
 
@@ -1268,10 +1268,10 @@ function printReceipt(b){
   $('#printArea').innerHTML=receiptHTML(b);document.body.classList.add('printing');
   setTimeout(()=>{try{window.print()}catch(e){}document.body.classList.remove('printing')},50);
 }
-const pdfSafe=s=>String(s).replace(/₹/g,'Rs. ').replace(/[–—]/g,'-').replace(/•/g,'*').replace(/·/g,'|').replace(/[^\x20-\x7E]/g,'');
+const pdfSafe=s=>String(s).replace(/₹/g,'Rs. ').replace(/[–-]/g,'-').replace(/•/g,'*').replace(/·/g,'|').replace(/[^\x20-\x7E]/g,'');
 function downloadPDF(id){
   const b=myB.find(x=>x.id===id);if(!b)return;
-  if(!window.jspdf){toast('PDF library not loaded — opening print dialog. Choose "Save as PDF".','err',5000);return printReceipt(b)}
+  if(!window.jspdf){toast('PDF library not loaded - opening print dialog. Choose "Save as PDF".','err',5000);return printReceipt(b)}
   try{
     const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a5'}),W=148,Lm=12,R=W-12;
     d.setFillColor(7,26,51);d.rect(0,0,W,30,'F');
@@ -1298,7 +1298,7 @@ function downloadPDF(id){
     d.text('Thank you for playing with SportSpot! Show this receipt at the venue.',W/2,192,{align:'center'});
     d.text('Hackathon prototype - simulated payment. Generated '+new Date().toLocaleString('en-IN'),W/2,197,{align:'center'});
     d.save(`SportSpot-Receipt-${b.id}.pdf`);toast('🧾 Receipt downloaded');
-  }catch(e){console.error(e);toast('Download blocked here — opening print dialog. Choose "Save as PDF".','err',5000);printReceipt(b)}
+  }catch(e){console.error(e);toast('Download blocked here - opening print dialog. Choose "Save as PDF".','err',5000);printReceipt(b)}
 }
 
 /* ================== DASHBOARD ================== */
@@ -1388,7 +1388,7 @@ function renderProfile(){
     <div class="row-btns" style="margin-top:4px"><button class="ghost-btn" style="flex:1" onclick="editing=false;renderProfile()">Cancel</button><button class="confirm-btn" style="flex:1" id="pBtn" onclick="saveProfile()">Save</button></div>`
   :`<div class="prof-top"><span class="av">${esc(initials(u.name))}</span><div><b>${esc(u.name)}</b><p class="muted" style="font-size:13px">Player</p></div></div>
     <div class="prof-row"><span>Email</span><span>${esc(u.email)}</span></div>
-    <div class="prof-row"><span>Phone</span><span>${u.phone?'+91 '+esc(u.phone):'—'}</span></div>
+    <div class="prof-row"><span>Phone</span><span>${u.phone?'+91 '+esc(u.phone):'-'}</span></div>
     <div class="prof-row"><span>Member since</span><span>${fmtD(u.since)}</span></div>
     <div class="row-btns"><button class="ghost-btn" style="flex:1" onclick="editing=true;renderProfile()">✏️ Edit</button><button class="danger-btn" style="flex:1" onclick="logout()">Logout</button></div>`;
 }
